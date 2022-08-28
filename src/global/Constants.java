@@ -9,4 +9,6 @@ public class Constants {
     public static int META_PATH_LENGTH = META_PATH.length;
     // 文件路径
     public static String FILE_PATH = "src/data";
+    // 查询节点ID
+    public static int queryNodeId = 0;
 }

@@ -31,6 +31,7 @@ public class MainProcess {
             graph.insertEdge(heterogeneousEdge);
         }
 
-        GraphUtils.bfs(graph, 0);
+        // 筛选出与查询节点无关的点并删除
+        GraphUtils.bfs(graph, Constants.queryNodeId);
     }
 }
