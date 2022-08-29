@@ -32,6 +32,7 @@ public class MainProcess {
         }
 
         // 筛选出与查询节点无关的点并删除
-        GraphUtils.bfs(graph, Constants.queryNodeId);
+        GraphUtils.bfsTraverse(graph, Constants.queryNodeId);
+        // 对所有的点运用最大流算法，把异构图转变成同构图
     }
 }

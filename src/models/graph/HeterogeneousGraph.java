@@ -48,9 +48,11 @@ public class HeterogeneousGraph {
         int startPoint = edge.getStartPoint();
         int endPoint = edge.getEndPoint();
         // 以起点为基础每个点存储与其相邻的点
-        adjacencyLinkedList[startPoint].add(endPoint);
+        // adjacencyLinkedList[startPoint].add(endPoint);
+        adjacencyLinkedList[startPoint].add(edge);
         // 以终点为基础每个点存储与其相邻的点
-        adjacencyLinkedListReverse[endPoint].add(startPoint);
+        // adjacencyLinkedListReverse[endPoint].add(startPoint);
+        adjacencyLinkedListReverse[endPoint].add(edge);
     }
 
     /**
@@ -101,6 +103,7 @@ public class HeterogeneousGraph {
     public void nodeSplit(int nodeId) {
         HeterogeneousNode virtualNode = new HeterogeneousNode();
         virtualNode.id = this.nodeSet.size();
+        // 派生出来的节点默认类型设置为"virtual"便于处理
         virtualNode.nodeType = "virtual";
 
         LinkedList[] newAdjacencyLinkedList = new LinkedList[this.adjacencyLinkedList.length + 1];
