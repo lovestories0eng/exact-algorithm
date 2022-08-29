@@ -17,6 +17,13 @@ public class HeterogeneousEdge {
         this.flow = 0;
     }
 
+    public void swap() {
+        int tmp;
+        tmp = this.startPoint;
+        this.startPoint = this.endPoint;
+        this.endPoint = tmp;
+    }
+
     public int getStartPoint() {
         return startPoint;
     }
