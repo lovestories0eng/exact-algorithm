@@ -11,9 +11,8 @@ import java.util.*;
  **/
 public class HeterogeneousGraph {
     public int vertexNum;
-    private int edgeNum;
-    public LinkedList[] adjacencyLinkedList;
-    public LinkedList[] adjacencyLinkedListReverse;
+    // public LinkedList[] adjacencyLinkedList;
+    // public LinkedList[] adjacencyLinkedListReverse;
     private List<HeterogeneousNode> nodeSet;
 
     public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMap;
@@ -30,17 +29,16 @@ public class HeterogeneousGraph {
     // 生成异构图，以邻接链表方式
     public HeterogeneousGraph(int n, List<HeterogeneousNode> nodeSet) {
         vertexNum = nodeSet.size();
-        edgeNum = 0;
         this.nodeSet = nodeSet;
-        this.hashMap = new HashMap<Integer, LinkedList<HeterogeneousEdge>>();
-        this.hashMapReverse = new HashMap<Integer, LinkedList<HeterogeneousEdge>>();
-        adjacencyLinkedList = new LinkedList[n];
-        adjacencyLinkedListReverse = new LinkedList[n];
+        this.hashMap = new HashMap<>();
+        this.hashMapReverse = new HashMap<>();
+        // adjacencyLinkedList = new LinkedList[n];
+        // adjacencyLinkedListReverse = new LinkedList[n];
 
-        for (int i = 0; i < vertexNum; i++) {
-            adjacencyLinkedList[i] = new LinkedList<>();
-            adjacencyLinkedListReverse[i] = new LinkedList<>();
-        }
+        // for (int i = 0; i < vertexNum; i++) {
+            // adjacencyLinkedList[i] = new LinkedList<>();
+            // adjacencyLinkedListReverse[i] = new LinkedList<>();
+        // }
     }
 
     /**
@@ -51,12 +49,12 @@ public class HeterogeneousGraph {
         int endPoint = edge.getEndPoint();
         // 以起点为基础每个点存储与其相邻的点
         // adjacencyLinkedList[startPoint].add(endPoint);
-        adjacencyLinkedList[startPoint].add(edge);
+        // adjacencyLinkedList[startPoint].add(edge);
         // 以终点为基础每个点存储与其相邻的点
         // adjacencyLinkedListReverse[endPoint].add(startPoint);
-        adjacencyLinkedListReverse[endPoint].add(edge);
+        // adjacencyLinkedListReverse[endPoint].add(edge);
 
-        LinkedList<HeterogeneousEdge> tmp = new LinkedList<HeterogeneousEdge>();
+        LinkedList<HeterogeneousEdge> tmp = new LinkedList<>();
         if (hashMap.containsKey(startPoint)) {
             tmp = hashMap.get(startPoint);
             tmp.add(edge);
@@ -67,7 +65,7 @@ public class HeterogeneousGraph {
 
         }
 
-        tmp = new LinkedList<HeterogeneousEdge>();
+        tmp = new LinkedList<>();
         if (hashMapReverse.containsKey(endPoint)) {
             tmp = hashMapReverse.get(endPoint);
             tmp.add(edge);
@@ -76,13 +74,6 @@ public class HeterogeneousGraph {
             tmp.add(edge);
             hashMapReverse.put(endPoint, tmp);
         }
-
-    }
-
-    /**
-     * 以查询节点为起始节点，初步遍历图，找出有元路径相连的目标节点
-     **/
-    public void traverseGraph() {
 
     }
 
@@ -112,6 +103,57 @@ public class HeterogeneousGraph {
     }
 
     /**
+     * 在bfsTraverse初步遍历后生成导出子图
+     **/
+    public void createInducedGraph(List<HeterogeneousNode> nodeSet) {
+        this.hashMap = this.deleteLinkEdge(hashMap, nodeSet);
+        this.hashMapReverse = this.deleteLinkEdge(hashMapReverse, nodeSet);
+        this.nodeSet = nodeSet;
+        this.vertexNum = this.nodeSet.size();
+        System.out.println("初步筛选后的图尺寸");
+        System.out.println(this.nodeSet.size());
+    }
+
+    public HashMap<Integer, LinkedList<HeterogeneousEdge>> deleteLinkEdge(HashMap<Integer, LinkedList<HeterogeneousEdge>> map, List<HeterogeneousNode> nodeSet) {
+        Map.Entry<Integer, LinkedList<HeterogeneousEdge>> entry;
+        Iterator<Map.Entry<Integer, LinkedList<HeterogeneousEdge>>> iterator = map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            entry = iterator.next();
+            // 不存在的点则直接删除key
+            if (judgeExist(entry.getKey(), nodeSet)) {
+                iterator.remove();
+            } else {
+                map.replace(entry.getKey(), deleteUnExistEdge(entry.getValue(), nodeSet));
+            }
+        }
+        return map;
+    }
+
+    public boolean judgeExist(int nodeId, List<HeterogeneousNode> nodeSet) {
+        for (HeterogeneousNode heterogeneousNode : nodeSet) {
+            if (heterogeneousNode.id == nodeId) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public LinkedList<HeterogeneousEdge> deleteUnExistEdge(
+            LinkedList<HeterogeneousEdge> heterogeneousEdges,
+            List<HeterogeneousNode> nodeSet
+    ) {
+        LinkedList<HeterogeneousEdge> newEdges = new LinkedList<>();
+        for (HeterogeneousEdge edge : heterogeneousEdges) {
+            if (!(judgeExist(edge.getStartPoint(), nodeSet) ||
+                    judgeExist(edge.getEndPoint(), nodeSet))
+            ) {
+                newEdges.add(edge);
+            }
+        }
+        return newEdges;
+    }
+
+    /**
      * 分裂一个节点，使其变成两个虚拟节点（由边不相交转换成点不相交）
      **/
     public void nodeSplit(int nodeId) {
@@ -128,7 +170,7 @@ public class HeterogeneousGraph {
             this.insertEdge(edge);
         }
 
-        this.hashMap.replace(nodeId, new LinkedList<HeterogeneousEdge>());
+        this.hashMap.replace(nodeId, new LinkedList<>());
 
         HeterogeneousEdge edge = new HeterogeneousEdge(Constants.SHARED_TIMES);
         edge.setStartPoint(nodeId);

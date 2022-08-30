@@ -30,9 +30,14 @@ public class MainProcess {
             heterogeneousEdge.setEndPoint(edge[1]);
             graph.insertEdge(heterogeneousEdge);
         }
+        System.out.println(graph.vertexNum);
 
         // 筛选出与查询节点无关的点并删除
-        GraphUtils.bfsTraverse(graph, Constants.queryNodeId);
+        List<HeterogeneousNode> inducedNodes = GraphUtils.bfsTraverse(graph, Constants.queryNodeId);
+
+        // 生成导出子图，简化图结构
+        graph.createInducedGraph(inducedNodes);
         // 对所有的点运用最大流算法，把异构图转变成同构图
+        GraphUtils.maxFlow(graph, 0, 3);
     }
 }
