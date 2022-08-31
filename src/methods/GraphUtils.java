@@ -18,6 +18,9 @@ public class GraphUtils {
      * 返回与起始节点想连的点，用于同构图的构建
      **/
     public static void maxFlow(HeterogeneousGraph graph, int startPoint, int endPoint) {
+        // 所有节点的状态都标记为false
+        graph.reInitNodeset();
+
         ArrayList<Integer> parent = new ArrayList<>();
 
         int indexU, indexV;
@@ -26,6 +29,8 @@ public class GraphUtils {
 
         while (bfs(graph, startPoint, endPoint, parent)) {
             int pathFlow = Integer.MAX_VALUE;
+            //
+            pathFlow = 1;
             int endIndex = 0, startIndex = 0;
             // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
             for (int i = 0; i < graph.nodeSet.size(); i++) {
@@ -38,6 +43,7 @@ public class GraphUtils {
             for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
                 indexU = parent.get(indexV);
                 u = graph.nodeSet.get(indexU).id;
+
                 if (pathLength < (Constants.META_PATH_LENGTH - 1) / 2) {
                     int size = graph.hashMapReverse.get(u).size();
                     // 遍历邻接链表
@@ -72,7 +78,8 @@ public class GraphUtils {
                         int tmp = graph.hashMapReverse.get(u).get(i).getStartPoint();
                         // 寻找到反向邻接链表中边的起始点
                         if (tmp == v) {
-                            graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
+                            // graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
+                            graph.hashMapReverse.get(u).get(i).capacity -= 1;
                         }
                     }
                 } else {
@@ -82,13 +89,15 @@ public class GraphUtils {
                         int tmp = graph.hashMap.get(u).get(i).getEndPoint();
                         // 寻找到邻接链表中边的终止点
                         if (tmp == v) {
-                            graph.hashMap.get(u).get(i).capacity -= pathFlow;
+                            // graph.hashMap.get(u).get(i).capacity -= pathFlow;
+                            graph.hashMap.get(u).get(i).capacity -= 1;
                         }
                     }
                 }
                 pathLength++;
             }
-            maxFlow += pathFlow;
+            // maxFlow += pathFlow;
+            maxFlow += 1;
         }
         System.out.println("从点" + startPoint + "到" + "点" + endPoint + "的最大流为" + maxFlow);
     }
@@ -196,6 +205,7 @@ public class GraphUtils {
         }
 
         if ((Objects.equals(nodeSet.get(indexU).nodeType, Constants.META_PATH[currentPathLength])
+                // 虚拟节点
                 || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
                 && !visited.get(index).visited
                 && edge.capacity > 0
@@ -252,7 +262,6 @@ public class GraphUtils {
                     int point = graph.hashMap.get(u).get(i).getEndPoint();
                     if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                             && !visited.get(point)
-                            // && graph.hashMap.get(u).get(i).capacity > 0
                             ) {
                         queue.offer(point);
                         visited.set(point, true);
@@ -268,7 +277,6 @@ public class GraphUtils {
 
                         if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                                 && !visited.get(point)
-                                // && graph.hashMapReverse.get(u).get(i).capacity > 0
                                 ) {
                             queue.offer(point);
                             visited.set(point, true);

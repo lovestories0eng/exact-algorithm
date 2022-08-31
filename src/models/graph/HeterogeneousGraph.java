@@ -37,6 +37,13 @@ public class HeterogeneousGraph {
         this.hashMapResidualReverse = new HashMap<>();
     }
 
+    // 重置所有节点的访问状态
+    public void reInitNodeset() {
+        for (HeterogeneousNode heterogeneousNode : this.nodeSet) {
+            heterogeneousNode.visited = false;
+        }
+    }
+
     /**
      * 插入边
      **/
