@@ -15,19 +15,16 @@ import java.util.*;
 public class GraphUtils {
     /**
      * 利用最大流找出异构图节点所有的元路径
+     * 返回与起始节点想连的点，用于同构图的构建
      **/
     public static void maxFlow(HeterogeneousGraph graph, int startPoint, int endPoint) {
-        ArrayList<Integer> parent = new ArrayList<Integer>();
+        ArrayList<Integer> parent = new ArrayList<>();
 
         int indexU, indexV;
         int u, v;
         int maxFlow = 0;
 
         while (bfs(graph, startPoint, endPoint, parent)) {
-            // System.out.println("This is parent!");
-            // for (int i = 0; i < parent.size(); i++) {
-            //     System.out.println(parent.get(i));
-            // }
             int pathFlow = Integer.MAX_VALUE;
             int endIndex = 0, startIndex = 0;
             // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
@@ -40,7 +37,6 @@ public class GraphUtils {
             int pathLength = 0;
             for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
                 indexU = parent.get(indexV);
-                v = graph.nodeSet.get(indexV).id;
                 u = graph.nodeSet.get(indexU).id;
                 if (pathLength < (Constants.META_PATH_LENGTH - 1) / 2) {
                     int size = graph.hashMapReverse.get(u).size();
@@ -100,7 +96,6 @@ public class GraphUtils {
     /**
      * 广度优先搜索判断两点之间有无路径并把路径存储起来
      *
-     * @return
      */
     public static boolean bfs(HeterogeneousGraph graph, int startPoint, int endPoint, ArrayList<Integer> parent) {
         // visited数组用来存储索引
@@ -192,16 +187,16 @@ public class GraphUtils {
             }
         }
 
-        int indexu = 0;
+        int indexU = 0;
         for (int i = 0;i < visited.size(); i++) {
             if (visited.get(i).id == u) {
-                indexu = i;
+                indexU = i;
                 break;
             }
         }
 
-        if ((Objects.equals(nodeSet.get(indexu).nodeType, Constants.META_PATH[currentPathLength])
-                || Objects.equals(nodeSet.get(indexu).nodeType, "virtual"))
+        if ((Objects.equals(nodeSet.get(indexU).nodeType, Constants.META_PATH[currentPathLength])
+                || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
                 && !visited.get(index).visited
                 && edge.capacity > 0
         ) {
@@ -209,7 +204,7 @@ public class GraphUtils {
             HeterogeneousNode tmpNode = visited.get(index);
             tmpNode.visited = true;
             visited.set(index, tmpNode);
-            parent.set(index, indexu);
+            parent.set(index, indexU);
         }
     }
 
@@ -219,7 +214,7 @@ public class GraphUtils {
     public static List<HeterogeneousNode> bfsTraverse(HeterogeneousGraph graph, int queryNodeId) {
         List<HeterogeneousNode> nodes = new ArrayList<>();
 
-        ArrayList<Boolean> visited = new ArrayList<Boolean>();
+        ArrayList<Boolean> visited = new ArrayList<>();
         for (int i = 0; i < graph.vertexNum; i++) {
             // 全部初始化为false
             visited.add(false);
@@ -254,7 +249,7 @@ public class GraphUtils {
             // 未超过元路径长度的一半时
             if (currentPathLength <= halfMetaPath) {
                 for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
-                    int point = ((HeterogeneousEdge) graph.hashMap.get(u).get(i)).getEndPoint();
+                    int point = graph.hashMap.get(u).get(i).getEndPoint();
                     if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                             && !visited.get(point)
                             // && graph.hashMap.get(u).get(i).capacity > 0

@@ -31,7 +31,6 @@ public class MainProcess {
             heterogeneousEdge.setEndPoint(edge[1]);
             graph.insertEdge(heterogeneousEdge);
         }
-        int originNodeNum = graph.vertexNum;
         System.out.println(graph.vertexNum);
 
         // 筛选出和查询节点无关的点并删除从而节省存储空间
@@ -41,7 +40,7 @@ public class MainProcess {
         graph.createInducedGraph(inducedNodes);
 
         // 创建锚点，给sinkNode的id进行赋值
-        int sinkNodeId = originNodeNum;
+        // int sinkNodeId = originNodeNum;
 
         // 根据锚点生成新的图结构
         // graph.createVirtualSinkNode(0, sinkNodeId);

@@ -11,8 +11,6 @@ import java.util.*;
  **/
 public class HeterogeneousGraph {
     public int vertexNum;
-    // public LinkedList[] adjacencyLinkedList;
-    // public LinkedList[] adjacencyLinkedListReverse;
     public List<HeterogeneousNode> nodeSet;
 
     public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMap;
@@ -37,13 +35,6 @@ public class HeterogeneousGraph {
         this.hashMapReverse = new HashMap<>();
         this.hashMapResidual = new HashMap<>();
         this.hashMapResidualReverse = new HashMap<>();
-        // adjacencyLinkedList = new LinkedList[n];
-        // adjacencyLinkedListReverse = new LinkedList[n];
-
-        // for (int i = 0; i < vertexNum; i++) {
-            // adjacencyLinkedList[i] = new LinkedList<>();
-            // adjacencyLinkedListReverse[i] = new LinkedList<>();
-        // }
     }
 
     /**
@@ -52,12 +43,6 @@ public class HeterogeneousGraph {
     public void insertEdge(HeterogeneousEdge edge) {
         int startPoint = edge.getStartPoint();
         int endPoint = edge.getEndPoint();
-        // 以起点为基础每个点存储与其相邻的点
-        // adjacencyLinkedList[startPoint].add(endPoint);
-        // adjacencyLinkedList[startPoint].add(edge);
-        // 以终点为基础每个点存储与其相邻的点
-        // adjacencyLinkedListReverse[endPoint].add(startPoint);
-        // adjacencyLinkedListReverse[endPoint].add(edge);
 
         LinkedList<HeterogeneousEdge> tmp = new LinkedList<>();
         if (hashMap.containsKey(startPoint)) {
@@ -78,35 +63,6 @@ public class HeterogeneousGraph {
             tmp.add(edge);
             hashMapReverse.put(endPoint, tmp);
         }
-
-        // // 在反方向创建容量为零的边
-        // HeterogeneousEdge virtualEdge = new HeterogeneousEdge(0);
-        // virtualEdge.setStartPoint(endPoint);
-        // virtualEdge.setEndPoint(startPoint);
-        //
-        // startPoint = virtualEdge.getStartPoint();
-        // endPoint = virtualEdge.getEndPoint();
-        //
-        // tmp = new LinkedList<>();
-        // if (hashMapResidual.containsKey(startPoint)) {
-        //     tmp = hashMapResidual.get(startPoint);
-        //     tmp.add(virtualEdge);
-        //     hashMapResidual.replace(startPoint, tmp);
-        // } else {
-        //     tmp.add(virtualEdge);
-        //     hashMapResidual.put(startPoint, tmp);
-        // }
-        //
-        // tmp = new LinkedList<>();
-        // if (hashMapResidualReverse.containsKey(endPoint)) {
-        //     tmp = hashMapResidualReverse.get(endPoint);
-        //     tmp.add(virtualEdge);
-        //     hashMapResidualReverse.replace(endPoint, tmp);
-        // } else {
-        //     tmp.add(virtualEdge);
-        //     hashMapResidualReverse.put(endPoint, tmp);
-        // }
-
     }
 
     /**
