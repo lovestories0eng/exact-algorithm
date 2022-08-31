@@ -3,6 +3,7 @@ import methods.GraphUtils;
 import methods.LoadData;
 import models.Edge.HeterogeneousEdge;
 import models.graph.HeterogeneousGraph;
+import models.graph.HomogeneousGraph;
 import models.node.HeterogeneousNode;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class MainProcess {
             nodeSet.add(heterogeneousNode);
         }
 
-        HeterogeneousGraph graph = new HeterogeneousGraph(nodeSet.size(), nodeSet);
+        HeterogeneousGraph graph = new HeterogeneousGraph(nodeSet);
 
         ArrayList<int[]> edges = LoadData.loadEdge();
         for (int[] edge : edges) {
@@ -30,14 +31,23 @@ public class MainProcess {
             heterogeneousEdge.setEndPoint(edge[1]);
             graph.insertEdge(heterogeneousEdge);
         }
+        int originNodeNum = graph.vertexNum;
         System.out.println(graph.vertexNum);
 
-        // 筛选出与查询节点无关的点并删除
+        // 筛选出和查询节点无关的点并删除从而节省存储空间
         List<HeterogeneousNode> inducedNodes = GraphUtils.bfsTraverse(graph, Constants.queryNodeId);
 
         // 生成导出子图，简化图结构
         graph.createInducedGraph(inducedNodes);
+
+        // 创建锚点，给sinkNode的id进行赋值
+        int sinkNodeId = originNodeNum;
+
+        // 根据锚点生成新的图结构
+        // graph.createVirtualSinkNode(0, sinkNodeId);
+
         // 对所有的点运用最大流算法，把异构图转变成同构图
-        GraphUtils.maxFlow(graph, 0, 3);
+        HomogeneousGraph homogeneousGraph = new HomogeneousGraph();
+        GraphUtils.maxFlow(graph, 0, 1);
     }
 }

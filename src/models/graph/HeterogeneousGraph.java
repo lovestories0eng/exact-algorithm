@@ -13,10 +13,13 @@ public class HeterogeneousGraph {
     public int vertexNum;
     // public LinkedList[] adjacencyLinkedList;
     // public LinkedList[] adjacencyLinkedListReverse;
-    private List<HeterogeneousNode> nodeSet;
+    public List<HeterogeneousNode> nodeSet;
 
     public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMap;
     public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMapReverse;
+
+    public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMapResidual;
+    public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMapResidualReverse;
 
     public List<HeterogeneousNode> getNodeSet() {
         return nodeSet;
@@ -27,11 +30,13 @@ public class HeterogeneousGraph {
     }
 
     // 生成异构图，以邻接链表方式
-    public HeterogeneousGraph(int n, List<HeterogeneousNode> nodeSet) {
+    public HeterogeneousGraph(List<HeterogeneousNode> nodeSet) {
         vertexNum = nodeSet.size();
         this.nodeSet = nodeSet;
         this.hashMap = new HashMap<>();
         this.hashMapReverse = new HashMap<>();
+        this.hashMapResidual = new HashMap<>();
+        this.hashMapResidualReverse = new HashMap<>();
         // adjacencyLinkedList = new LinkedList[n];
         // adjacencyLinkedListReverse = new LinkedList[n];
 
@@ -62,7 +67,6 @@ public class HeterogeneousGraph {
         } else {
             tmp.add(edge);
             hashMap.put(startPoint, tmp);
-
         }
 
         tmp = new LinkedList<>();
@@ -75,30 +79,60 @@ public class HeterogeneousGraph {
             hashMapReverse.put(endPoint, tmp);
         }
 
+        // // 在反方向创建容量为零的边
+        // HeterogeneousEdge virtualEdge = new HeterogeneousEdge(0);
+        // virtualEdge.setStartPoint(endPoint);
+        // virtualEdge.setEndPoint(startPoint);
+        //
+        // startPoint = virtualEdge.getStartPoint();
+        // endPoint = virtualEdge.getEndPoint();
+        //
+        // tmp = new LinkedList<>();
+        // if (hashMapResidual.containsKey(startPoint)) {
+        //     tmp = hashMapResidual.get(startPoint);
+        //     tmp.add(virtualEdge);
+        //     hashMapResidual.replace(startPoint, tmp);
+        // } else {
+        //     tmp.add(virtualEdge);
+        //     hashMapResidual.put(startPoint, tmp);
+        // }
+        //
+        // tmp = new LinkedList<>();
+        // if (hashMapResidualReverse.containsKey(endPoint)) {
+        //     tmp = hashMapResidualReverse.get(endPoint);
+        //     tmp.add(virtualEdge);
+        //     hashMapResidualReverse.replace(endPoint, tmp);
+        // } else {
+        //     tmp.add(virtualEdge);
+        //     hashMapResidualReverse.put(endPoint, tmp);
+        // }
+
     }
 
     /**
      * 创建虚拟锚点
      * 假设只存在P-A-P类型的元路径，不存在P-A-P-A-P的路径
      **/
-    public void createVirtualNode(int nodeId) {
+    public void createVirtualSinkNode(int nodeId, int virtualSinkNodeId) {
         int nodeNum = nodeSet.size();
         // 创建出一个虚拟锚点
-        HeterogeneousNode virtualNode = new HeterogeneousNode();
-        virtualNode.id = nodeNum - 1;
+        HeterogeneousNode virtualSinkNode = new HeterogeneousNode();
+        virtualSinkNode.id = virtualSinkNodeId;
+        virtualSinkNode.nodeType = "sink";
 
         List<HeterogeneousNode> nodeSet = this.nodeSet;
 
         // 遍历图中所有的点，找出所有目标类型节点并且使其与虚拟锚点相连，从而可以使用网络最大流算法
         for (int i = 0; i < nodeNum; i++) {
-            if (i != nodeId && Objects.equals(nodeSet.get(i).nodeType, nodeSet.get(nodeId).nodeType)) {
+            if (nodeSet.get(i).id != nodeId
+                    && Objects.equals(nodeSet.get(i).nodeType, nodeSet.get(nodeId).nodeType)) {
                 HeterogeneousEdge edge = new HeterogeneousEdge(Constants.SHARED_TIMES);
-                edge.setStartPoint(i);
-                edge.setEndPoint(virtualNode.id);
+                edge.setEndPoint(nodeSet.get(i).id);
+                edge.setStartPoint(virtualSinkNode.id);
                 this.insertEdge(edge);
             }
         }
-        this.addNode(virtualNode);
+        this.addNode(virtualSinkNode);
         this.vertexNum++;
     }
 

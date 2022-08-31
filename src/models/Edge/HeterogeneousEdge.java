@@ -7,6 +7,8 @@ public class HeterogeneousEdge {
     public int capacity;
     // 边已经被共享的次数
     public int flow;
+    // 反向边，用于残差图
+    public int flowReverse;
     private int startPoint;
     private int endPoint;
 

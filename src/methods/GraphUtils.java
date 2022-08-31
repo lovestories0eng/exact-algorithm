@@ -19,20 +19,34 @@ public class GraphUtils {
     public static void maxFlow(HeterogeneousGraph graph, int startPoint, int endPoint) {
         ArrayList<Integer> parent = new ArrayList<Integer>();
 
+        int indexU, indexV;
         int u, v;
         int maxFlow = 0;
-        int pathLength = 0;
 
         while (bfs(graph, startPoint, endPoint, parent)) {
+            // System.out.println("This is parent!");
+            // for (int i = 0; i < parent.size(); i++) {
+            //     System.out.println(parent.get(i));
+            // }
             int pathFlow = Integer.MAX_VALUE;
+            int endIndex = 0, startIndex = 0;
             // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
-            for (v = endPoint; v != startPoint; v = parent.get(v)) {
-                u = parent.get(v);
+            for (int i = 0; i < graph.nodeSet.size(); i++) {
+                if (graph.nodeSet.get(i).id == endPoint)
+                    endIndex = i;
+                else if (graph.nodeSet.get(i).id == startPoint)
+                    startIndex = i;
+            }
+            int pathLength = 0;
+            for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
+                indexU = parent.get(indexV);
+                v = graph.nodeSet.get(indexV).id;
+                u = graph.nodeSet.get(indexU).id;
                 if (pathLength < (Constants.META_PATH_LENGTH - 1) / 2) {
                     int size = graph.hashMapReverse.get(u).size();
                     // 遍历邻接链表
                     for (int i = 0; i < size; i++) {
-                        if (graph.hashMapReverse.get(u).get(i).getStartPoint() == v) {
+                        if (graph.hashMapReverse.get(u).get(i).getStartPoint() == graph.nodeSet.get(indexV).id) {
                             pathFlow = Math.min(pathFlow, graph.hashMapReverse.get(u).get(i).capacity);
                         }
                     }
@@ -40,7 +54,7 @@ public class GraphUtils {
                     int size = graph.hashMap.get(u).size();
                     // 遍历邻接链表
                     for (int i = 0; i < size; i++) {
-                        if (graph.hashMap.get(u).get(i).getEndPoint() == v) {
+                        if (graph.hashMap.get(u).get(i).getEndPoint() == graph.nodeSet.get(indexV).id) {
                             pathFlow = Math.min(pathFlow, graph.hashMap.get(u).get(i).capacity);
                         }
                     }
@@ -51,76 +65,97 @@ public class GraphUtils {
 
             // 更新网络流量
             pathLength = 0;
-            for (v = endPoint; v != startPoint; v = parent.get(v)) {
-                u = parent.get(v);
+            for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
+                indexU = parent.get(indexV);
+                v = graph.nodeSet.get(indexV).id;
+                u = graph.nodeSet.get(indexU).id;
                 if (pathLength < (Constants.META_PATH_LENGTH - 1) / 2) {
                     int size = graph.hashMapReverse.get(u).size();
                     // 遍历邻接链表
                     for (int i = 0; i < size; i++) {
-                        if (graph.hashMapReverse.get(u).get(i).getStartPoint() == v) {
-                            graph.hashMapReverse.get(i).get(u).capacity -= pathFlow;
-                            graph.hashMapReverse.get(u).get(i).capacity += pathFlow;
+                        int tmp = graph.hashMapReverse.get(u).get(i).getStartPoint();
+                        // 寻找到反向邻接链表中边的起始点
+                        if (tmp == v) {
+                            graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
                         }
                     }
                 } else {
                     int size = graph.hashMap.get(u).size();
                     // 遍历邻接链表
                     for (int i = 0; i < size; i++) {
-                        if (graph.hashMap.get(u).get(i).getEndPoint() == v) {
+                        int tmp = graph.hashMap.get(u).get(i).getEndPoint();
+                        // 寻找到邻接链表中边的终止点
+                        if (tmp == v) {
                             graph.hashMap.get(u).get(i).capacity -= pathFlow;
-                            graph.hashMap.get(i).get(u).capacity += pathFlow;
                         }
                     }
                 }
-
                 pathLength++;
             }
-
-            maxFlow = pathFlow;
+            maxFlow += pathFlow;
         }
-        System.out.println(maxFlow);
+        System.out.println("从点" + startPoint + "到" + "点" + endPoint + "的最大流为" + maxFlow);
     }
 
     /**
-     * 广度优先搜索判断两点之间有无路径
+     * 广度优先搜索判断两点之间有无路径并把路径存储起来
      *
      * @return
      */
     public static boolean bfs(HeterogeneousGraph graph, int startPoint, int endPoint, ArrayList<Integer> parent) {
-        ArrayList<Boolean> visited = new ArrayList<Boolean>();
+        // visited数组用来存储索引
+        List<HeterogeneousNode> visited = new ArrayList<>(graph.getNodeSet());
+        HeterogeneousNode tmpNode;
         for (int i = 0; i < graph.vertexNum; i++) {
             // 全部初始化为false
-            visited.add(false);
+            tmpNode = visited.get(i);
+            tmpNode.visited = false;
+            visited.set(i, tmpNode);
         }
 
+        // parent数组用来存储搜索出来的路径，以索引的形式记录
         for (int i = 0; i < graph.vertexNum; i++) {
-            parent.add(0);
+            parent.add(-100);
         }
-        parent.set(startPoint, -1);
-
         Queue<Integer> queue = new LinkedList<>();
         int currentPathLength = 0;
         int halfMetaPath = Constants.META_PATH_LENGTH / 2;
 
-        queue.offer(startPoint);
-        visited.set(startPoint, true);
+
+        int startIndex = 0, endIndex = 0;
+        // 找到起始点在nodeSet中的索引
+        for (int i = 0; i < graph.nodeSet.size(); i++) {
+            if (graph.nodeSet.get(i).id == startPoint) {
+                startIndex = i;
+            }
+            if (graph.nodeSet.get(i).id == endPoint) {
+                endIndex = i;
+            }
+        }
+        parent.set(startIndex, -1);
+        queue.offer(startIndex);
+
+        tmpNode = visited.get(startIndex);
+        tmpNode.visited = true;
+        visited.set(startIndex, tmpNode);
         int u;
         // 初始化节点类型为空
         String tmpType = "";
         List<HeterogeneousNode> nodeSet = graph.getNodeSet();
         while (!queue.isEmpty()) {
-            u = queue.poll();
-            System.out.println(u);
-            if (!tmpType.equals(nodeSet.get(u).nodeType)) {
+            int indexU = queue.poll();
+            u = graph.nodeSet.get(indexU).id;
+            if (!tmpType.equals(nodeSet.get(indexU).nodeType)) {
                 currentPathLength++;
-                tmpType = nodeSet.get(u).nodeType;
+                tmpType = nodeSet.get(indexU).nodeType;
             }
             // 未超过元路径长度的一半时
             if (currentPathLength <= halfMetaPath) {
                 for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
+                    // 遍历点u的邻接链表
                     HeterogeneousEdge edge = graph.hashMap.get(u).get(i);
                     int point = graph.hashMap.get(u).get(i).getEndPoint();
-                    judgeEqual(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
+                    findLinkNode(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
                 }
             }
             // 超过元路径长度的一半时
@@ -128,33 +163,53 @@ public class GraphUtils {
                 // 遍历到目标节点的时候会产生null值
                 if (graph.hashMapReverse.get(u) != null) {
                     for (int i = 0; i < graph.hashMapReverse.get(u).size(); i++) {
-                        HeterogeneousEdge edge = graph.hashMap.get(u).get(i);
+                        // 遍历点u的反向邻接链表
+                        HeterogeneousEdge edge = graph.hashMapReverse.get(u).get(i);
                         int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
-                        judgeEqual(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
+                        findLinkNode(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
                     }
                 }
             }
         }
-        return visited.get(endPoint);
+        return visited.get(endIndex).visited;
     }
 
-    private static void judgeEqual(
+    private static void findLinkNode(
             ArrayList<Integer> parent,
-            ArrayList<Boolean> visited,
+            List<HeterogeneousNode> visited,
             Queue<Integer> queue,
             int currentPathLength,
-            int u, List<HeterogeneousNode> nodeSet,
+            int u,
+            List<HeterogeneousNode> nodeSet,
             HeterogeneousEdge edge,
             int point
     ) {
-        if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength])
-                || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
-                && !visited.get(point)
+        int index = 0;
+        for (int i = 0;i < visited.size(); i++) {
+            if (visited.get(i).id == point) {
+                index = i;
+                break;
+            }
+        }
+
+        int indexu = 0;
+        for (int i = 0;i < visited.size(); i++) {
+            if (visited.get(i).id == u) {
+                indexu = i;
+                break;
+            }
+        }
+
+        if ((Objects.equals(nodeSet.get(indexu).nodeType, Constants.META_PATH[currentPathLength])
+                || Objects.equals(nodeSet.get(indexu).nodeType, "virtual"))
+                && !visited.get(index).visited
                 && edge.capacity > 0
         ) {
-            queue.offer(point);
-            visited.set(point, true);
-            parent.set(point, u);
+            queue.offer(index);
+            HeterogeneousNode tmpNode = visited.get(index);
+            tmpNode.visited = true;
+            visited.set(index, tmpNode);
+            parent.set(index, indexu);
         }
     }
 
@@ -182,7 +237,6 @@ public class GraphUtils {
         while (!queue.isEmpty()) {
             u = queue.poll();
             // 存储与查询节点有关的点
-            System.out.println(u);
             String nodeType = "";
             for (HeterogeneousNode heterogeneousNode : nodeSet) {
                 if (heterogeneousNode.id == u) {
@@ -193,13 +247,18 @@ public class GraphUtils {
             if (!tmpType.equals(nodeType)) {
                 currentPathLength++;
                 tmpType = nodeSet.get(u).nodeType;
+                if (currentPathLength >= Constants.META_PATH_LENGTH + 1) {
+                    break;
+                }
             }
             // 未超过元路径长度的一半时
             if (currentPathLength <= halfMetaPath) {
                 for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
                     int point = ((HeterogeneousEdge) graph.hashMap.get(u).get(i)).getEndPoint();
-                    if (Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) && !visited.get(point)
-                            || Objects.equals(nodeSet.get(u).nodeType, "virtual")) {
+                    if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
+                            && !visited.get(point)
+                            // && graph.hashMap.get(u).get(i).capacity > 0
+                            ) {
                         queue.offer(point);
                         visited.set(point, true);
                     }
@@ -210,9 +269,12 @@ public class GraphUtils {
                 // 遍历到目标节点的时候会产生null值
                 if (graph.hashMapReverse.get(u) != null) {
                     for (int i = 0; i < graph.hashMapReverse.get(u).size(); i++) {
-                        int point = ((HeterogeneousEdge) graph.hashMapReverse.get(u).get(i)).getStartPoint();
-                        if (Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) && !visited.get(point)
-                                || Objects.equals(nodeSet.get(u).nodeType, "virtual")) {
+                        int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
+
+                        if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
+                                && !visited.get(point)
+                                // && graph.hashMapReverse.get(u).get(i).capacity > 0
+                                ) {
                             queue.offer(point);
                             visited.set(point, true);
                         }
