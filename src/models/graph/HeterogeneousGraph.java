@@ -89,7 +89,8 @@ public class HeterogeneousGraph {
         for (int i = 0; i < nodeNum; i++) {
             if (nodeSet.get(i).id != nodeId
                     && Objects.equals(nodeSet.get(i).nodeType, nodeSet.get(nodeId).nodeType)) {
-                HeterogeneousEdge edge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+                // HeterogeneousEdge edge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+                HeterogeneousEdge edge = new HeterogeneousEdge(1);
                 edge.setEndPoint(nodeSet.get(i).id);
                 edge.setStartPoint(virtualSinkNode.id);
                 this.insertEdge(edge);

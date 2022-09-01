@@ -16,6 +16,9 @@ public class GraphUtils {
     /**
      * 利用最大流找出异构图节点所有的元路径
      * 返回与起始节点想连的点，用于同构图的构建
+     * 在我们要解决的问题中，
+     * 网络流代表的是边的共享次数，
+     * 所以每次边中边的流量只能减一
      **/
     public static void maxFlow(HeterogeneousGraph graph, int startPoint, int endPoint) {
         // 所有节点的状态都标记为false
@@ -29,8 +32,7 @@ public class GraphUtils {
 
         while (bfs(graph, startPoint, endPoint, parent)) {
             int pathFlow = Integer.MAX_VALUE;
-            //
-            pathFlow = 1;
+            // pathFlow = 1;
             int endIndex = 0, startIndex = 0;
             // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
             for (int i = 0; i < graph.nodeSet.size(); i++) {
@@ -78,8 +80,8 @@ public class GraphUtils {
                         int tmp = graph.hashMapReverse.get(u).get(i).getStartPoint();
                         // 寻找到反向邻接链表中边的起始点
                         if (tmp == v) {
-                            // graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
-                            graph.hashMapReverse.get(u).get(i).capacity -= 1;
+                            graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
+                            // graph.hashMapReverse.get(u).get(i).capacity -= 1;
                         }
                     }
                 } else {
@@ -89,8 +91,8 @@ public class GraphUtils {
                         int tmp = graph.hashMap.get(u).get(i).getEndPoint();
                         // 寻找到邻接链表中边的终止点
                         if (tmp == v) {
-                            // graph.hashMap.get(u).get(i).capacity -= pathFlow;
-                            graph.hashMap.get(u).get(i).capacity -= 1;
+                            graph.hashMap.get(u).get(i).capacity -= pathFlow;
+                            // graph.hashMap.get(u).get(i).capacity -= 1;
                         }
                     }
                 }
@@ -158,6 +160,7 @@ public class GraphUtils {
                 for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
                     // 遍历点u的邻接链表
                     HeterogeneousEdge edge = graph.hashMap.get(u).get(i);
+                    // 得到后继节点
                     int point = graph.hashMap.get(u).get(i).getEndPoint();
                     findLinkNode(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
                 }
@@ -169,7 +172,9 @@ public class GraphUtils {
                     for (int i = 0; i < graph.hashMapReverse.get(u).size(); i++) {
                         // 遍历点u的反向邻接链表
                         HeterogeneousEdge edge = graph.hashMapReverse.get(u).get(i);
+                        // 得到后继节点
                         int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
+                        System.out.println(point + " " + graph.hashMapReverse.get(u).get(i).getEndPoint() + " " + graph.hashMapReverse.get(u).get(i).capacity);
                         findLinkNode(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
                     }
                 }
@@ -183,14 +188,17 @@ public class GraphUtils {
             List<HeterogeneousNode> visited,
             Queue<Integer> queue,
             int currentPathLength,
+            // 前驱节点
             int u,
             List<HeterogeneousNode> nodeSet,
             HeterogeneousEdge edge,
+            // 后继节点
             int point
     ) {
         int index = 0;
         for (int i = 0;i < visited.size(); i++) {
             if (visited.get(i).id == point) {
+                // 得到后继节点索引
                 index = i;
                 break;
             }
@@ -199,15 +207,20 @@ public class GraphUtils {
         int indexU = 0;
         for (int i = 0;i < visited.size(); i++) {
             if (visited.get(i).id == u) {
+                // 得到前驱节点索引
                 indexU = i;
                 break;
             }
         }
 
+        System.out.println(nodeSet.get(indexU).nodeType);
+        System.out.println(Constants.META_PATH[currentPathLength]);
         if ((Objects.equals(nodeSet.get(indexU).nodeType, Constants.META_PATH[currentPathLength])
                 // 虚拟节点
                 || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
+                // 判断后继节点是否被访问过
                 && !visited.get(index).visited
+                // 判断前驱节点和后继节点的连边容量是否大于零
                 && edge.capacity > 0
         ) {
             queue.offer(index);
