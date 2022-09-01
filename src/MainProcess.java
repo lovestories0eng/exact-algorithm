@@ -41,11 +41,8 @@ public class MainProcess {
         // 生成导出子图，简化图结构
         graph.createInducedGraph(inducedNodes);
 
-        // 创建锚点，给sinkNode的id进行赋值
-
         // 根据锚点生成新的图结构
         graph.createVirtualSinkNode(0, originNum);
-        // System.out.println("点" + graph.vertexNum);
 
         // 对所有的点运用最大流算法，把异构图转变成同构图
         HomogeneousGraph homogeneousGraph = new HomogeneousGraph();

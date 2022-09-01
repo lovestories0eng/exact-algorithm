@@ -46,7 +46,7 @@ public class GraphUtils {
                 indexU = parent.get(indexV);
                 u = graph.nodeSet.get(indexU).id;
 
-                if (pathLength < (Constants.META_PATH_LENGTH - 1) / 2) {
+                if (pathLength <= (Constants.META_PATH_LENGTH - 1) / 2) {
                     int size = graph.hashMapReverse.get(u).size();
                     // 遍历邻接链表
                     for (int i = 0; i < size; i++) {
@@ -73,7 +73,7 @@ public class GraphUtils {
                 indexU = parent.get(indexV);
                 v = graph.nodeSet.get(indexV).id;
                 u = graph.nodeSet.get(indexU).id;
-                if (pathLength < (Constants.META_PATH_LENGTH - 1) / 2) {
+                if (pathLength <= (Constants.META_PATH_LENGTH - 1) / 2) {
                     int size = graph.hashMapReverse.get(u).size();
                     // 遍历邻接链表
                     for (int i = 0; i < size; i++) {
@@ -98,8 +98,7 @@ public class GraphUtils {
                 }
                 pathLength++;
             }
-            // maxFlow += pathFlow;
-            maxFlow += 1;
+            maxFlow += pathFlow;
         }
         System.out.println("从点" + startPoint + "到" + "点" + endPoint + "的最大流为" + maxFlow);
     }
@@ -213,11 +212,11 @@ public class GraphUtils {
             }
         }
 
-        System.out.println(nodeSet.get(indexU).nodeType);
-        System.out.println(Constants.META_PATH[currentPathLength]);
-        if ((Objects.equals(nodeSet.get(indexU).nodeType, Constants.META_PATH[currentPathLength])
+        // System.out.println(nodeSet.get(indexU).nodeType);
+        // System.out.println(Constants.META_PATH[currentPathLength]);
+        if ((Objects.equals(nodeSet.get(index).nodeType, Constants.META_PATH[currentPathLength])
                 // 虚拟节点
-                || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
+                || Objects.equals(nodeSet.get(index).nodeType, "virtual"))
                 // 判断后继节点是否被访问过
                 && !visited.get(index).visited
                 // 判断前驱节点和后继节点的连边容量是否大于零
@@ -273,7 +272,7 @@ public class GraphUtils {
             if (currentPathLength <= halfMetaPath) {
                 for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
                     int point = graph.hashMap.get(u).get(i).getEndPoint();
-                    if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
+                    if ((Objects.equals(nodeSet.get(point).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                             && !visited.get(point)
                             ) {
                         queue.offer(point);
@@ -288,7 +287,7 @@ public class GraphUtils {
                     for (int i = 0; i < graph.hashMapReverse.get(u).size(); i++) {
                         int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
 
-                        if ((Objects.equals(nodeSet.get(u).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
+                        if ((Objects.equals(nodeSet.get(point).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                                 && !visited.get(point)
                                 ) {
                             queue.offer(point);
