@@ -173,7 +173,6 @@ public class GraphUtils {
                         HeterogeneousEdge edge = graph.hashMapReverse.get(u).get(i);
                         // 得到后继节点
                         int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
-                        System.out.println(point + " " + graph.hashMapReverse.get(u).get(i).getEndPoint() + " " + graph.hashMapReverse.get(u).get(i).capacity);
                         findLinkNode(parent, visited, queue, currentPathLength, u, nodeSet, edge, point);
                     }
                 }
@@ -212,8 +211,6 @@ public class GraphUtils {
             }
         }
 
-        // System.out.println(nodeSet.get(indexU).nodeType);
-        // System.out.println(Constants.META_PATH[currentPathLength]);
         if ((Objects.equals(nodeSet.get(index).nodeType, Constants.META_PATH[currentPathLength])
                 // 虚拟节点
                 || Objects.equals(nodeSet.get(index).nodeType, "virtual"))

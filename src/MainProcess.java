@@ -21,7 +21,6 @@ public class MainProcess {
             heterogeneousNode.nodeType = node[1];
             nodeSet.add(heterogeneousNode);
         }
-        System.out.println(nodeSet.size());
 
         HeterogeneousGraph graph = new HeterogeneousGraph(nodeSet);
 
