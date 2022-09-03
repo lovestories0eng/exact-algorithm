@@ -13,11 +13,12 @@ public class HeterogeneousGraph {
     public int vertexNum;
     public List<HeterogeneousNode> nodeSet;
 
+    // 用于存储本身的图结构
     public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMap;
     public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMapReverse;
 
-    public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMapResidual;
-    public HashMap<Integer, LinkedList<HeterogeneousEdge>> hashMapResidualReverse;
+    // 用于存储多部图
+    public HashMap<Integer, LinkedList<HeterogeneousEdge>> graphHashMap;
 
     public List<HeterogeneousNode> getNodeSet() {
         return nodeSet;
@@ -33,8 +34,7 @@ public class HeterogeneousGraph {
         this.nodeSet = nodeSet;
         this.hashMap = new HashMap<>();
         this.hashMapReverse = new HashMap<>();
-        this.hashMapResidual = new HashMap<>();
-        this.hashMapResidualReverse = new HashMap<>();
+        this.graphHashMap = new HashMap<>();
     }
 
     // 重置所有节点的访问状态
@@ -69,6 +69,21 @@ public class HeterogeneousGraph {
         } else {
             tmp.add(edge);
             hashMapReverse.put(endPoint, tmp);
+        }
+    }
+
+    public void insertMultipartGraph(HeterogeneousEdge edge) {
+        int startPoint = edge.getStartPoint();
+        int endPoint = edge.getEndPoint();
+
+        LinkedList<HeterogeneousEdge> tmp = new LinkedList<>();
+        if (graphHashMap.containsKey(startPoint)) {
+            tmp = graphHashMap.get(startPoint);
+            tmp.add(edge);
+            graphHashMap.replace(startPoint, tmp);
+        } else {
+            tmp.add(edge);
+            graphHashMap .put(startPoint, tmp);
         }
     }
 

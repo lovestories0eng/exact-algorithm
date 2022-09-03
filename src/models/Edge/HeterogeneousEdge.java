@@ -5,12 +5,10 @@ package models.Edge;
 public class HeterogeneousEdge {
     // 边能够被共享的次数
     public int capacity;
-    // 边已经被共享的次数
+    // 边已经被共享的次数，用于残差图
     public int flow;
-    // 反向边，用于残差图
-    public int flowReverse;
-    private int startPoint;
-    private int endPoint;
+    public int startPoint;
+    public int endPoint;
 
     public HeterogeneousEdge(int capacity) {
         // 初始化边容量

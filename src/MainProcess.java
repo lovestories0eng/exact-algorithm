@@ -43,6 +43,8 @@ public class MainProcess {
         // 根据锚点生成新的图结构
         graph.createVirtualSinkNode(0, originNum);
 
+        System.out.println("s");
+
         // 对所有的点运用最大流算法，把异构图转变成同构图
         HomogeneousGraph homogeneousGraph = new HomogeneousGraph();
         GraphUtils.maxFlow(graph, 0, originNum);
