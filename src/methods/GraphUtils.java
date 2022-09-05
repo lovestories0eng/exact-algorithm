@@ -4,6 +4,7 @@ import global.Constants;
 import models.Edge.HeterogeneousEdge;
 import models.graph.HeterogeneousGraph;
 import models.node.HeterogeneousNode;
+import models.node.Node;
 
 import java.util.*;
 
@@ -22,90 +23,19 @@ public class GraphUtils {
      * 网络流代表的是边的共享次数，
      * 所以每次边中边的流量只能减一
      **/
-    public static void maxFlow(HeterogeneousGraph graph, int startPoint, int endPoint) {
+    public static ArrayList<Node> maxFlow(HeterogeneousGraph graph, int startPoint, int endPoint) {
         // 所有节点的状态都标记为false
         graph.reInitNodeset();
 
-        System.out.println("ss");
         ArrayList<Integer> parent = new ArrayList<>();
-        ArrayList<Boolean> directions = new ArrayList<>();
 
         int indexU, indexV;
         int u, v;
         int maxFlow = 0;
+        ArrayList<Node> homogeneousNodes = new ArrayList<>();
 
-        // while (bfs(graph, startPoint, endPoint, parent)) {
-        //     int pathFlow = Integer.MAX_VALUE;
-        //     int endIndex = 0, startIndex = 0;
-        //     // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
-        //     for (int i = 0; i < graph.nodeSet.size(); i++) {
-        //         if (graph.nodeSet.get(i).id == endPoint)
-        //             endIndex = i;
-        //         else if (graph.nodeSet.get(i).id == startPoint)
-        //             startIndex = i;
-        //     }
-        //     int pathLength = 0;
-        //     for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
-        //         indexU = parent.get(indexV);
-        //         u = graph.nodeSet.get(indexU).id;
-        //
-        //         if (pathLength <= (Constants.META_PATH_LENGTH - 1) / 2) {
-        //             int size = graph.hashMapReverse.get(u).size();
-        //             // 遍历邻接链表
-        //             for (int i = 0; i < size; i++) {
-        //                 if (graph.hashMapReverse.get(u).get(i).getStartPoint() == graph.nodeSet.get(indexV).id) {
-        //                     pathFlow = Math.min(pathFlow, graph.hashMapReverse.get(u).get(i).capacity);
-        //                 }
-        //             }
-        //         } else {
-        //             int size = graph.hashMap.get(u).size();
-        //             // 遍历邻接链表
-        //             for (int i = 0; i < size; i++) {
-        //                 if (graph.hashMap.get(u).get(i).getEndPoint() == graph.nodeSet.get(indexV).id) {
-        //                     pathFlow = Math.min(pathFlow, graph.hashMap.get(u).get(i).capacity);
-        //                 }
-        //             }
-        //         }
-        //
-        //         pathLength++;
-        //     }
-        //     // 更新网络流量
-        //     pathLength = 0;
-        //     for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
-        //         indexU = parent.get(indexV);
-        //         v = graph.nodeSet.get(indexV).id;
-        //         u = graph.nodeSet.get(indexU).id;
-        //         if (pathLength <= (Constants.META_PATH_LENGTH - 1) / 2) {
-        //             int size = graph.hashMapReverse.get(u).size();
-        //             // 遍历邻接链表
-        //             for (int i = 0; i < size; i++) {
-        //                 int tmp = graph.hashMapReverse.get(u).get(i).getStartPoint();
-        //                 // 寻找到反向邻接链表中边的起始点
-        //                 if (tmp == v) {
-        //                     graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
-        //                     graph.hashMapReverse.get(u).get(i).flow += pathFlow;
-        //                 }
-        //             }
-        //         } else {
-        //             int size = graph.hashMap.get(u).size();
-        //             // 遍历邻接链表
-        //             for (int i = 0; i < size; i++) {
-        //                 int tmp = graph.hashMap.get(u).get(i).getEndPoint();
-        //                 // 寻找到邻接链表中边的终止点
-        //                 if (tmp == v) {
-        //                     graph.hashMap.get(u).get(i).capacity -= pathFlow;
-        //                     graph.hashMap.get(u).get(i).flow += pathFlow;
-        //                 }
-        //             }
-        //         }
-        //         pathLength++;
-        //     }
-        //     maxFlow += pathFlow;
-        // }
-
-        while (bfs(graph, startPoint, endPoint, parent, directions)) {
-            int pathFlow = Integer.MAX_VALUE;
-            pathFlow = 1;
+        while (bfs(graph, startPoint, endPoint, parent)) {
+            int pathFlow = 1;
             int endIndex = 0, startIndex = 0;
             // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
             for (int i = 0; i < graph.nodeSet.size(); i++) {
@@ -114,101 +44,48 @@ public class GraphUtils {
                 else if (graph.nodeSet.get(i).id == startPoint)
                     startIndex = i;
             }
-            // // 从路径终点遍历到路径起点
-            // for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
-            //     // 起始节点
-            //     indexU = parent.get(indexV);
-            //     u = graph.nodeSet.get(indexU).id;
-            //     // 后继节点
-            //     v = graph.nodeSet.get(indexV).id;
-            //     if (graph.hashMapReverse.get(u) != null) {
-            //         int size = graph.hashMapReverse.get(u).size();
-            //         // 遍历邻接链表
-            //         for (int i = 0; i < size; i++) {
-            //             if (graph.hashMapReverse.get(u).get(i).getStartPoint() == graph.nodeSet.get(indexV).id) {
-            //                 pathFlow = Math.min(pathFlow, graph.hashMapReverse.get(u).get(i).capacity);
-            //             }
-            //         }
-            //     } else {
-            //         int size = graph.hashMap.get(u).size();
-            //         // 遍历邻接链表
-            //         for (int i = 0; i < size; i++) {
-            //             if (graph.hashMap.get(u).get(i).getEndPoint() == graph.nodeSet.get(indexV).id) {
-            //                 pathFlow = Math.min(pathFlow, graph.hashMap.get(u).get(i).capacity);
-            //             }
-            //         }
-            //     }
-            //     // if (pathLength <= (Constants.META_PATH_LENGTH - 1) / 2) {
-            //     //     int size = graph.hashMapReverse.get(u).size();
-            //     //     // 遍历邻接链表
-            //     //     for (int i = 0; i < size; i++) {
-            //     //         if (graph.hashMapReverse.get(u).get(i).getStartPoint() == graph.nodeSet.get(indexV).id) {
-            //     //             pathFlow = Math.min(pathFlow, graph.hashMapReverse.get(u).get(i).capacity);
-            //     //         }
-            //     //     }
-            //     // } else {
-            //     //     int size = graph.hashMap.get(u).size();
-            //     //     // 遍历邻接链表
-            //     //     for (int i = 0; i < size; i++) {
-            //     //         if (graph.hashMap.get(u).get(i).getEndPoint() == graph.nodeSet.get(indexV).id) {
-            //     //             pathFlow = Math.min(pathFlow, graph.hashMap.get(u).get(i).capacity);
-            //     //         }
-            //     //     }
-            //     // }
-            // }
 
+            Node node = new Node();
+            node.id = parent.get(endIndex);
+            homogeneousNodes.add(node);
+
+            // 在我们的问题中，每条路径的网络流量一定是1，所以不用找出路径的最小流量。
 
             // 更新网络流量
             for (indexV = endIndex; indexV != startIndex; indexV = parent.get(indexV)) {
-                boolean direction = directions.get(indexV);
-
                 indexU = parent.get(indexV);
                 // 后继节点
                 v = graph.nodeSet.get(indexV).id;
                 // 前驱节点
                 u = graph.nodeSet.get(indexU).id;
 
-                if (graph.hashMapReverse.get(u) != null) {
-                    int size = graph.hashMapReverse.get(u).size();
-                    // 遍历邻接链表
-                    for (int i = 0; i < size; i++) {
-                        int tmp = graph.hashMapReverse.get(u).get(i).getStartPoint();
-                        // 寻找到反向邻接链表中边的起始点
-                        if (tmp == v) {
-                            if (direction) {
-                                graph.hashMapReverse.get(u).get(i).capacity -= pathFlow;
-                                graph.hashMapReverse.get(u).get(i).flow += pathFlow;
-                            } else {
-                                graph.hashMapReverse.get(u).get(i).flow -= pathFlow;
-                                graph.hashMapReverse.get(u).get(i).capacity += pathFlow;
-                            }
-                        }
+                int size;
+                size = graph.graphHashMap.get(u).size();
+                // 遍历邻接链表
+                for (int i = 0; i < size; i++) {
+                    int tmp = graph.graphHashMap.get(u).get(i).getEndPoint();
+                    // 寻找边的后继节点
+                    if (tmp == v) {
+                        graph.graphHashMap.get(u).get(i).capacity -= pathFlow;
                     }
-                } else {
-                    int size = graph.hashMap.get(u).size();
-                    // 遍历邻接链表
-                    for (int i = 0; i < size; i++) {
-                        int tmp = graph.hashMap.get(u).get(i).getEndPoint();
-                        // 寻找到邻接链表中边的终止点
-                        if (tmp == v) {
-                            if (direction) {
-                                graph.hashMap.get(u).get(i).capacity -= pathFlow;
-                                graph.hashMap.get(u).get(i).flow += pathFlow;
-                            } else {
-                                graph.hashMap.get(u).get(i).flow -= pathFlow;
-                                graph.hashMap.get(u).get(i).capacity += pathFlow;
-                            }
-                        }
+                }
+
+                size = graph.graphHashMap.get(v).size();
+                // 遍历邻接链表
+                for (int i = 0; i < size; i++) {
+                    int tmp = graph.graphHashMap.get(v).get(i).getEndPoint();
+                    // 寻找边的前驱节点
+                    if (tmp == u) {
+                        graph.graphHashMap.get(v).get(i).capacity += pathFlow;
                     }
                 }
             }
             maxFlow += pathFlow;
             System.out.println(maxFlow);
             parent = new ArrayList<>();
-            directions = new ArrayList<>();
-
         }
         System.out.println("从点" + startPoint + "到" + "点" + endPoint + "的最大流为" + maxFlow);
+        return homogeneousNodes;
     }
 
     /**
@@ -218,8 +95,7 @@ public class GraphUtils {
             HeterogeneousGraph graph,
             int startPoint,
             int endPoint,
-            ArrayList<Integer> parent,
-            ArrayList<Boolean> directions
+            ArrayList<Integer> parent
     ) {
         // visited数组用来存储索引
         List<HeterogeneousNode> visited = new ArrayList<>(graph.getNodeSet());
@@ -234,7 +110,6 @@ public class GraphUtils {
         // parent数组用来存储搜索出来的路径，以索引的形式记录
         for (int i = 0; i < graph.vertexNum; i++) {
             parent.add(-100);
-            directions.add(true);
         }
         Queue<Integer> queue = new LinkedList<>();
 
@@ -256,44 +131,22 @@ public class GraphUtils {
         tmpNode.visited = true;
         visited.set(startIndex, tmpNode);
         int u;
-        List<HeterogeneousNode> nodeSet = graph.getNodeSet();
-        boolean reverse = false;
         while (!queue.isEmpty()) {
             int indexU = queue.poll();
             u = graph.nodeSet.get(indexU).id;
-            boolean find;
-            // 未超过元路径长度的一半时
-            if (graph.hashMap.get(u) != null && !reverse) {
-                for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
-                    // 遍历点u的邻接链表
-                    HeterogeneousEdge edge = graph.hashMap.get(u).get(i);
-                    // 得到后继节点
-                    int point = graph.hashMap.get(u).get(i).getEndPoint();
-                    find = findLinkNode(parent, visited, queue, u, edge, point, directions);
-                }
-                // 如果正向邻接链表无法找到capacity > 0的邻居节点，则从反向邻接链表中开始找flow > 0的点
 
-            }
-
-            // 超过元路径长度的一半时
-            // 遍历到目标节点的时候会产生null值
-            else if (graph.hashMapReverse.get(u) != null) {
-                reverse = true;
-                for (int i = 0; i < graph.hashMapReverse.get(u).size(); i++) {
-                    // 遍历点u的反向邻接链表
-                    HeterogeneousEdge edge = graph.hashMapReverse.get(u).get(i);
-                    // 得到后继节点
-                    int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
-                    find = findLinkNode(parent, visited, queue, u, edge, point, directions);
-                }
-                // 如果反向邻接链表无法找到capacity > 0的邻居节点，则从正向邻接链表中开始找flow > 0的点
-
+            for (int i = 0; i < graph.graphHashMap.get(u).size(); i++) {
+                // 遍历点u的邻接链表
+                HeterogeneousEdge edge = graph.graphHashMap.get(u).get(i);
+                // 得到后继节点
+                int point = graph.graphHashMap.get(u).get(i).getEndPoint();
+                findLinkNode(parent, visited, queue, u, edge, point);
             }
         }
         return visited.get(endIndex).visited;
     }
 
-    private static boolean findLinkNode(
+    private static void findLinkNode(
             ArrayList<Integer> parent,
             List<HeterogeneousNode> visited,
             Queue<Integer> queue,
@@ -301,8 +154,7 @@ public class GraphUtils {
             int u,
             HeterogeneousEdge edge,
             // 后继节点
-            int point,
-            ArrayList<Boolean> directions
+            int point
     ) {
 
         int indexU = 0;
@@ -322,31 +174,14 @@ public class GraphUtils {
                 break;
             }
         }
-
-        // 判断后继节点是否被访问过以及前驱节点和后继节点的连边容量是否大于零
-        // 优先选择capacity > 0的邻居节点，其次选择flow > 0的邻居节点
-
         // 正向前进
-        // 设置前驱节点的direction
         if (!visited.get(index).visited && edge.capacity > 0) {
             queue.offer(index);
             HeterogeneousNode tmpNode = visited.get(index);
             tmpNode.visited = true;
             visited.set(index, tmpNode);
             parent.set(index, indexU);
-            directions.set(indexU, true);
-            return true;
         }
-        // // 反向前进
-        // else if (!visited.get(index).visited && edge.flow > 0) {
-        //     queue.offer(indexU);
-        //     HeterogeneousNode tmpNode = visited.get(indexU);
-        //     tmpNode.visited = true;
-        //     visited.set(indexU, tmpNode);
-        //     parent.set(indexU, index);
-        //     directions.set(index, false);
-        // }
-        return false;
     }
 
     /**
