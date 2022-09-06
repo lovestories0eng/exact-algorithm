@@ -46,7 +46,7 @@ public class GraphUtils {
             }
 
             Node node = new Node();
-            node.id = parent.get(endIndex);
+            node.id = graph.nodeSet.get(parent.get(endIndex)).id;
             homogeneousNodes.add(node);
 
             // 在我们的问题中，每条路径的网络流量一定是1，所以不用找出路径的最小流量。
@@ -81,7 +81,6 @@ public class GraphUtils {
                 }
             }
             maxFlow += pathFlow;
-            System.out.println(maxFlow);
             parent = new ArrayList<>();
         }
         System.out.println("从点" + startPoint + "到" + "点" + endPoint + "的最大流为" + maxFlow);
@@ -174,7 +173,6 @@ public class GraphUtils {
                 break;
             }
         }
-        // 正向前进
         if (!visited.get(index).visited && edge.capacity > 0) {
             queue.offer(index);
             HeterogeneousNode tmpNode = visited.get(index);

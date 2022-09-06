@@ -109,22 +109,25 @@ public class HeterogeneousGraph {
         int currentPathLength = 0;
         int halfMetaPath = Constants.META_PATH_LENGTH / 2;
 
-        int nodeIndex;
+        int nodeIndex = 0;
         for (int i = 0; i < nodeSet.size(); i++) {
             if (nodeSet.get(i).id == nodeId) {
                 nodeIndex = i;
             }
         }
 
-        queue.offer(nodeId);
-        visited.set(nodeId, true);
-        visitedFormer.set(nodeId, true);
-        int u;
+        queue.offer(nodeIndex);
+        visited.set(nodeIndex, true);
+        visitedFormer.set(nodeIndex, true);
+        int indexU, u;
+        indexU = nodeIndex;
+        u = nodeId;
         // 初始化节点类型为空
         String tmpType = "";
         List<HeterogeneousNode> nodeSet = this.nodeSet;
         while (!queue.isEmpty()) {
-            u = queue.poll();
+            indexU = queue.poll();
+            u =  nodeSet.get(indexU).id;
             String nodeType = "";
             for (HeterogeneousNode heterogeneousNode : nodeSet) {
                 if (heterogeneousNode.id == u) {
@@ -134,7 +137,7 @@ public class HeterogeneousGraph {
             }
             if (!tmpType.equals(nodeType)) {
                 currentPathLength++;
-                tmpType = nodeSet.get(u).nodeType;
+                tmpType = nodeSet.get(indexU).nodeType;
                 if (currentPathLength >= Constants.META_PATH_LENGTH + 1) {
                     break;
                 }
@@ -144,12 +147,11 @@ public class HeterogeneousGraph {
 
                 int point = hashMap.get(u).get(0).getStartPoint();
                 for (int j = 0; j < hashMap.get(point).size(); j++) {
-                    System.out.println(hashMap.get(point).size());
                     HeterogeneousEdge tmpEdge = new HeterogeneousEdge(0);
                     tmpEdge.capacity = hashMap.get(point).get(j).capacity;
                     tmpEdge.startPoint = hashMap.get(point).get(j).startPoint;
                     tmpEdge.endPoint = hashMap.get(point).get(j).endPoint;
-                    this.insertMultipartGraph(hashMap.get(point).get(j));
+                    this.insertMultipartGraph(tmpEdge);
                     // 需要深拷贝
                     // 设置反向路径的容量为0
                     tmpEdge = new HeterogeneousEdge(0);
@@ -162,12 +164,18 @@ public class HeterogeneousGraph {
 
                 for (int i = 0; i < hashMap.get(u).size(); i++) {
                     point = hashMap.get(u).get(i).getEndPoint();
-                    if ((Objects.equals(nodeSet.get(point).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
-                            && !visited.get(point)
+                    int indexPoint = 0;
+                    for (int j = 0; j < nodeSet.size(); j++) {
+                        if (nodeSet.get(j).id == point) {
+                            indexPoint = j;
+                        }
+                    }
+                    if ((Objects.equals(nodeSet.get(indexPoint).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
+                            && !visited.get(indexPoint)
                     ) {
-                        queue.offer(point);
-                        visited.set(point, true);
-                        visitedFormer.set(point, true);
+                        queue.offer(indexPoint);
+                        visited.set(indexPoint, true);
+                        visitedFormer.set(indexPoint, true);
                     }
                 }
             }
@@ -181,8 +189,15 @@ public class HeterogeneousGraph {
                         // 深拷贝
                         HeterogeneousEdge tmpEdge = new HeterogeneousEdge(0);
                         int startPoint = hashMapReverse.get(point).get(j).getStartPoint();
+                        int indexStart = 0;
+                        for (int k = 0; k < nodeSet.size(); k++) {
+                            if (nodeSet.get(k).id == startPoint) {
+                                indexStart = k;
+                                break;
+                            }
+                        }
                         int endPoint = hashMapReverse.get(point).get(j).getEndPoint();
-                        if (!visitedFormer.get(startPoint)) {
+                        if (!visitedFormer.get(indexStart)) {
                             tmpEdge.startPoint = endPoint;
                             tmpEdge.endPoint = startPoint;
                             tmpEdge.capacity = hashMapReverse.get(point).get(j).capacity;
@@ -198,12 +213,18 @@ public class HeterogeneousGraph {
 
                     for (int i = 0; i < hashMapReverse.get(u).size(); i++) {
                         point = hashMapReverse.get(u).get(i).getStartPoint();
+                        int indexPoint = 0;
+                        for (int j = 0; j < nodeSet.size(); j++) {
+                            if (nodeSet.get(j).id == point) {
+                                indexPoint = j;
+                            }
+                        }
 
-                        if ((Objects.equals(nodeSet.get(point).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
-                                && !visited.get(point)
+                        if ((Objects.equals(nodeSet.get(indexPoint).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
+                                && !visited.get(indexPoint)
                         ) {
-                            queue.offer(point);
-                            visited.set(point, true);
+                            queue.offer(indexPoint);
+                            visited.set(indexPoint, true);
                         }
                     }
                 }
@@ -213,10 +234,10 @@ public class HeterogeneousGraph {
     }
 
     /**
-     * 创建虚拟锚点
+     * 创建与虚拟锚点相连的路径
      * 假设只存在P-A-P类型的元路径，不存在P-A-P-A-P的路径
      **/
-    public void createVirtualSinkNode(String nodeType, int virtualSinkNodeId) {
+    public void createVirtualSinkPath(String nodeType, int virtualSinkNodeId) {
         int nodeNum = nodeSet.size();
         // 创建出一个虚拟锚点
         HeterogeneousNode virtualSinkNode = new HeterogeneousNode();
@@ -240,10 +261,6 @@ public class HeterogeneousGraph {
                 this.insertMultipartGraph(edge);
             }
         }
-
-
-        this.addNode(virtualSinkNode);
-        this.vertexNum++;
     }
 
     /**

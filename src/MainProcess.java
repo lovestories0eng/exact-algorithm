@@ -12,13 +12,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * TODO: 结合nodeSplit完成点不相交
  * TODO: maxFlow不但能够返回最大流量，同时能返回同构图中相连的点 --- Done
- * TODO: 利用maxFlow返回的点构建重构图
- * TODO: 对所有点都进行maxFlow算法
- * TODO: createVirtualNode的时候需要把所有相同类型节点与virtualNode相连
+ * TODO: 利用maxFlow返回的点构建重构图 --- Done
+ * TODO: 对所有点都进行maxFlow算法 --- Done
+ * TODO: createVirtualNode的时候需要把所有相同类型节点与virtualNode相连 --- Done
  * 关于图结构：
  * 多重图在每次使用最大流算法时需要重新构建，由于graphHashMap是new出来的对象，因此同时也重置了网络流量
  * virtualNode不需要使得nodeId成为特例
@@ -51,39 +52,45 @@ public class MainProcess {
         // 筛选出和查询节点无关的点并删除从而节省存储空间
         List<HeterogeneousNode> inducedNodes = GraphUtils.bfsTraverse(graph, Constants.queryNodeId);
 
-
         // 生成导出子图，简化图结构
         graph.createInducedGraph(inducedNodes);
         int endPoint = originNum;
 
-        graph.createMultipartGraph(0);
+        int startPoint;
 
-        // 根据锚点生成新的图结构
-        graph.createVirtualSinkNode("A", endPoint);
+        HeterogeneousNode virtualSinkNode = new HeterogeneousNode();
+        virtualSinkNode.id = endPoint;
+        virtualSinkNode.nodeType = "sink";
 
-        int startPoint = 0;
+        graph.addNode(virtualSinkNode);
+        graph.vertexNum++;
 
+        HomogeneousGraph homogeneousGraph = new HomogeneousGraph();
+        for (HeterogeneousNode inducedNode : inducedNodes) {
+            if (Objects.equals(inducedNode.nodeType, "A")) {
+                startPoint = inducedNode.id;
+                graph.createMultipartGraph(startPoint);
+                // 根据锚点生成新的图结构
+                graph.createVirtualSinkPath("A", endPoint);
+                // 起始点与锚点连接的边的容量设置为零
+                for (int j = 0; j < graph.graphHashMap.get(startPoint).size(); j++) {
+                    if (graph.graphHashMap.get(startPoint).get(j).endPoint == endPoint) {
+                        graph.graphHashMap.get(startPoint).get(j).capacity = 0;
+                    }
+                }
 
-        // for (int i = 0; i < inducedNodes.size(); i++) {
-        //     startPoint = inducedNodes.get(i).id;
-        // }
-
-        // 起始点与锚点连接的边的容量设置为零
-        for (int i = 0; i < graph.graphHashMap.get(startPoint).size(); i++) {
-            if (graph.graphHashMap.get(startPoint).get(i).endPoint == endPoint){
-                graph.graphHashMap.get(startPoint).get(i).capacity = 0;
+                // 对所有的点运用最大流算法，把异构图转变成同构图
+                ArrayList<Node> homogeneousNodes = GraphUtils.maxFlow(graph, startPoint, endPoint);
+                System.out.println("Done!");
+                for (Node homogeneousNode : homogeneousNodes) {
+                    HomogeneousEdge homogeneousEdge = new HomogeneousEdge();
+                    homogeneousEdge.pointFirst = startPoint;
+                    homogeneousEdge.pointSecond = homogeneousNode.id;
+                    homogeneousGraph.insertEdge(homogeneousEdge);
+                }
+                homogeneousGraph.addNodes(homogeneousNodes);
             }
         }
-
-        // 对所有的点运用最大流算法，把异构图转变成同构图
-        HomogeneousGraph homogeneousGraph = new HomogeneousGraph();
-        ArrayList<Node> homogeneousNodes = GraphUtils.maxFlow(graph, 0, endPoint);
-        for (Node homogeneousNode : homogeneousNodes) {
-            HomogeneousEdge homogeneousEdge = new HomogeneousEdge();
-            homogeneousEdge.pointFirst = startPoint;
-            homogeneousEdge.pointSecond = homogeneousNode.id;
-            homogeneousGraph.insertEdge(homogeneousEdge);
-        }
-        homogeneousGraph.addNodes(homogeneousNodes);
+        System.out.println("Done!");
     }
 }
