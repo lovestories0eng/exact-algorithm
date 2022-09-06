@@ -81,7 +81,6 @@ public class MainProcess {
 
                 // 对所有的点运用最大流算法，把异构图转变成同构图
                 ArrayList<Node> homogeneousNodes = GraphUtils.maxFlow(graph, startPoint, endPoint);
-                System.out.println("Done!");
                 for (Node homogeneousNode : homogeneousNodes) {
                     HomogeneousEdge homogeneousEdge = new HomogeneousEdge();
                     homogeneousEdge.pointFirst = startPoint;
@@ -89,6 +88,10 @@ public class MainProcess {
                     homogeneousGraph.insertEdge(homogeneousEdge);
                 }
                 homogeneousGraph.addNodes(homogeneousNodes);
+                Node tmpNode = new Node();
+                tmpNode.id = inducedNode.id;
+                tmpNode.visited = false;
+                homogeneousGraph.addNode(tmpNode);
             }
         }
         System.out.println("Done!");

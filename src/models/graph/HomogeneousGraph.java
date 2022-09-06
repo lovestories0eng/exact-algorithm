@@ -35,6 +35,15 @@ public class HomogeneousGraph {
         }
     }
 
+    public void addNode(Node node) {
+        for (Node point : nodeSet) {
+            if (point.id == node.id) {
+                return;
+            }
+        }
+        this.nodeSet.add(node);
+    }
+
     public void insertEdge(HomogeneousEdge edge) {
         int pointFirst = edge.pointFirst;
         int pointSecond = edge.pointSecond;
