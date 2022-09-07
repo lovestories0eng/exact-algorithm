@@ -60,13 +60,17 @@ public class HeterogeneousGraph {
             hashMap.put(startPoint, tmp);
         }
 
+        // 为了避免指针相同，创建并复制一个新的对象
+        HeterogeneousEdge newEdge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+        newEdge.startPoint = edge.getStartPoint();
+        newEdge.endPoint = edge.getEndPoint();
         tmp = new LinkedList<>();
         if (hashMapReverse.containsKey(endPoint)) {
             tmp = hashMapReverse.get(endPoint);
-            tmp.add(edge);
+            tmp.add(newEdge);
             hashMapReverse.replace(endPoint, tmp);
         } else {
-            tmp.add(edge);
+            tmp.add(newEdge);
             hashMapReverse.put(endPoint, tmp);
         }
     }
@@ -151,6 +155,7 @@ public class HeterogeneousGraph {
                     tmpEdge.capacity = hashMap.get(point).get(j).capacity;
                     tmpEdge.startPoint = hashMap.get(point).get(j).startPoint;
                     tmpEdge.endPoint = hashMap.get(point).get(j).endPoint;
+                    tmpEdge.direction = true;
                     this.insertMultipartGraph(tmpEdge);
                     // 需要深拷贝
                     // 设置反向路径的容量为0
@@ -159,6 +164,7 @@ public class HeterogeneousGraph {
                     int endPoint = hashMap.get(point).get(j).getEndPoint();
                     tmpEdge.startPoint = endPoint;
                     tmpEdge.endPoint = startPoint;
+                    tmpEdge.direction = false;
                     this.insertMultipartGraph(tmpEdge);
                 }
 
@@ -201,12 +207,14 @@ public class HeterogeneousGraph {
                             tmpEdge.startPoint = endPoint;
                             tmpEdge.endPoint = startPoint;
                             tmpEdge.capacity = hashMapReverse.get(point).get(j).capacity;
+                            tmpEdge.direction = true;
                             this.insertMultipartGraph(tmpEdge);
                             tmpEdge = new HeterogeneousEdge(0);
                             // 设置反向路径的容量为0
                             tmpEdge.startPoint = startPoint;
                             tmpEdge.endPoint = endPoint;
                             tmpEdge.capacity = 0;
+                            tmpEdge.direction = false;
                             this.insertMultipartGraph(tmpEdge);
                         }
                     }
@@ -253,11 +261,13 @@ public class HeterogeneousGraph {
                 HeterogeneousEdge edge = new HeterogeneousEdge(1);
                 edge.setStartPoint(nodeSet.get(i).id);
                 edge.setEndPoint(virtualSinkNode.id);
+                edge.direction = true;
                 this.insertMultipartGraph(edge);
 
                 edge = new HeterogeneousEdge(0);
                 edge.setStartPoint(virtualSinkNode.id);
                 edge.setEndPoint(nodeSet.get(i).id);
+                edge.direction = false;
                 this.insertMultipartGraph(edge);
             }
         }

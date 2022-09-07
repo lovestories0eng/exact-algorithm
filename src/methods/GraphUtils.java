@@ -35,6 +35,7 @@ public class GraphUtils {
         ArrayList<Node> homogeneousNodes = new ArrayList<>();
 
         while (bfs(graph, startPoint, endPoint, parent)) {
+
             int pathFlow = 1;
             int endIndex = 0, startIndex = 0;
             // 超过元路径长度的一半时和不超过元路径长度的一半时分别对待
@@ -49,6 +50,10 @@ public class GraphUtils {
             node.id = graph.nodeSet.get(parent.get(endIndex)).id;
             homogeneousNodes.add(node);
 
+            // 记录路径
+            ArrayList<Integer> pathRecords = new ArrayList<>();
+            // 记录路径方向
+            ArrayList<Boolean> pathDirections = new ArrayList<>();
             // 在我们的问题中，每条路径的网络流量一定是1，所以不用找出路径的最小流量。
 
             // 更新网络流量
@@ -59,6 +64,8 @@ public class GraphUtils {
                 // 前驱节点
                 u = graph.nodeSet.get(indexU).id;
 
+                pathRecords.add(indexV);
+
                 int size;
                 size = graph.graphHashMap.get(u).size();
                 // 遍历邻接链表
@@ -67,6 +74,7 @@ public class GraphUtils {
                     // 寻找边的后继节点
                     if (tmp == v) {
                         graph.graphHashMap.get(u).get(i).capacity -= pathFlow;
+                        pathDirections.add(graph.graphHashMap.get(u).get(i).direction);
                     }
                 }
 
@@ -80,8 +88,67 @@ public class GraphUtils {
                     }
                 }
             }
+            pathRecords.add(startIndex);
+            // 列表倒置
+            Collections.reverse(pathRecords);
+            Collections.reverse(pathDirections);
             maxFlow += pathFlow;
             parent = new ArrayList<>();
+
+            // TODO: 由于边不相交和点不相交的对称性，需要把hashMap和hashMapReverse中的值也更新。
+            int currentPathLength = 0;
+            int totalMetaPathLength = Constants.META_PATH_LENGTH - 1;
+            // 与虚拟锚点相连的边不需要管
+            for (int i = 0; i < pathDirections.size() - 1; i++) {
+                boolean tmpDirection = pathDirections.get(i);
+                // 获取起始点的id
+                int nodeIdStart = graph.nodeSet.get(pathRecords.get(i)).id;
+                // 获取终止点的id
+                int nodeIdEnd = graph.nodeSet.get(pathRecords.get(i + 1)).id;
+                // 如果是正向前进
+                if (tmpDirection) {
+                    if (currentPathLength < totalMetaPathLength / 2) {
+                        // 遍历起始点的邻接链表
+                        for (int j = 0; j < graph.hashMap.get(nodeIdStart).size(); j++) {
+                            if (graph.hashMap.get(nodeIdStart).get(j).endPoint == nodeIdEnd) {
+                                graph.hashMap.get(nodeIdStart).get(j).capacity -= 1;
+                            }
+                        }
+                    } else if (currentPathLength >= totalMetaPathLength / 2) {
+                        // 遍历终止点的邻接链表
+                        for (int j = 0; j < graph.hashMapReverse.get(nodeIdStart).size(); j++) {
+                            if (graph.hashMapReverse.get(nodeIdStart).get(j).startPoint == nodeIdEnd) {
+                                graph.hashMapReverse.get(nodeIdStart).get(j).capacity -= 1;
+                            }
+                        }
+                    }
+                    currentPathLength++;
+                }
+                // 如果是反向前进
+                else {
+                    if (currentPathLength <= totalMetaPathLength / 2) {
+                        // 遍历起始点的邻接链表
+                        for (int j = 0; j < graph.hashMap.get(nodeIdEnd).size(); j++) {
+                            if (graph.hashMap.get(nodeIdEnd).get(j).endPoint == nodeIdStart) {
+                                graph.hashMap.get(nodeIdEnd).get(j).capacity += 1;
+                            }
+                        }
+                    } else if (currentPathLength > totalMetaPathLength / 2) {
+                        // 遍历终止点的邻接链表
+                        for (int j = 0; j < graph.hashMapReverse.get(nodeIdEnd).size(); j++) {
+                            if (graph.hashMapReverse.get(nodeIdEnd).get(j).startPoint == nodeIdStart) {
+                                graph.hashMapReverse.get(nodeIdEnd).get(j).capacity += 1;
+                            }
+                        }
+                    }
+                    currentPathLength--;
+
+                }
+            }
+            for (int i = 0; i < pathRecords.size(); i++) {
+                System.out.printf("%d ", graph.nodeSet.get(pathRecords.get(i)).id);
+            }
+            System.out.println();
         }
         System.out.println("从点" + startPoint + "到" + "点" + endPoint + "的最大流为" + maxFlow);
         return homogeneousNodes;

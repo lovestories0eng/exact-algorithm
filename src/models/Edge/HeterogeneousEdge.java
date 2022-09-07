@@ -9,6 +9,8 @@ public class HeterogeneousEdge {
     public int flow;
     public int startPoint;
     public int endPoint;
+    // 多部图中，边的方向，true代表正向，false代表反向
+    public boolean direction;
 
     public HeterogeneousEdge(int capacity) {
         // 初始化边容量

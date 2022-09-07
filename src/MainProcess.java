@@ -16,6 +16,7 @@ import java.util.Objects;
 
 /**
  * TODO: 结合nodeSplit完成点不相交
+ * TODO: 边不相交要考虑路径的对成性
  * TODO: maxFlow不但能够返回最大流量，同时能返回同构图中相连的点 --- Done
  * TODO: 利用maxFlow返回的点构建重构图 --- Done
  * TODO: 对所有点都进行maxFlow算法 --- Done
@@ -76,6 +77,18 @@ public class MainProcess {
                 for (int j = 0; j < graph.graphHashMap.get(startPoint).size(); j++) {
                     if (graph.graphHashMap.get(startPoint).get(j).endPoint == endPoint) {
                         graph.graphHashMap.get(startPoint).get(j).capacity = 0;
+                    }
+                }
+
+                // 同构图中已经有边相连的容量也设置为零
+                if (homogeneousGraph.hashMap.get(startPoint) != null) {
+                    for (int j = 0; j < homogeneousGraph.hashMap.get(startPoint).size(); j++) {
+                        int alreadyConnectedPoint = homogeneousGraph.hashMap.get(startPoint).get(j).pointSecond;
+                        for (int k = 0; k < graph.graphHashMap.get(alreadyConnectedPoint).size(); k++) {
+                            if (graph.graphHashMap.get(alreadyConnectedPoint).get(k).endPoint == endPoint) {
+                                graph.graphHashMap.get(alreadyConnectedPoint).get(k).capacity = 0;
+                            }
+                        }
                     }
                 }
 
