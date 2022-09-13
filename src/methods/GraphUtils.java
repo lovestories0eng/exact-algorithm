@@ -1,6 +1,6 @@
 package methods;
 
-import global.Constants;
+import global.Config;
 import models.Edge.HeterogeneousEdge;
 import models.graph.HeterogeneousGraph;
 import models.node.HeterogeneousNode;
@@ -97,7 +97,7 @@ public class GraphUtils {
 
             // TODO: 由于边不相交和点不相交的对称性，需要把hashMap和hashMapReverse中的值也更新。
             int currentPathLength = 0;
-            int totalMetaPathLength = Constants.META_PATH_LENGTH - 1;
+            int totalMetaPathLength = Config.META_PATH_LENGTH - 1;
             // 与虚拟锚点相连的边不需要管
             for (int i = 0; i < pathDirections.size() - 1; i++) {
                 boolean tmpDirection = pathDirections.get(i);
@@ -264,7 +264,7 @@ public class GraphUtils {
         }
         Queue<Integer> queue = new LinkedList<>();
         int currentPathLength = 0;
-        int halfMetaPath = Constants.META_PATH_LENGTH / 2;
+        int halfMetaPath = Config.META_PATH_LENGTH / 2;
 
         queue.offer(queryNodeId);
         visited.set(queryNodeId, true);
@@ -285,7 +285,7 @@ public class GraphUtils {
             if (!tmpType.equals(nodeType)) {
                 currentPathLength++;
                 tmpType = nodeSet.get(u).nodeType;
-                if (currentPathLength >= Constants.META_PATH_LENGTH + 1) {
+                if (currentPathLength >= Config.META_PATH_LENGTH + 1) {
                     break;
                 }
             }
@@ -293,7 +293,7 @@ public class GraphUtils {
             if (currentPathLength <= halfMetaPath) {
                 for (int i = 0; i < graph.hashMap.get(u).size(); i++) {
                     int point = graph.hashMap.get(u).get(i).getEndPoint();
-                    if ((Objects.equals(nodeSet.get(point).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
+                    if ((Objects.equals(nodeSet.get(point).nodeType, Config.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                             && !visited.get(point)
                     ) {
                         queue.offer(point);
@@ -308,7 +308,7 @@ public class GraphUtils {
                     for (int i = 0; i < graph.hashMapReverse.get(u).size(); i++) {
                         int point = graph.hashMapReverse.get(u).get(i).getStartPoint();
 
-                        if ((Objects.equals(nodeSet.get(point).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
+                        if ((Objects.equals(nodeSet.get(point).nodeType, Config.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(u).nodeType, "virtual"))
                                 && !visited.get(point)
                         ) {
                             queue.offer(point);

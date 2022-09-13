@@ -1,6 +1,6 @@
-import global.Constants;
+import global.Config;
 import methods.GraphUtils;
-import methods.LoadData;
+import methods.DataReader;
 import models.Edge.HeterogeneousEdge;
 import models.Edge.HomogeneousEdge;
 import models.graph.HeterogeneousGraph;
@@ -15,8 +15,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * TODO: 将数据结构转换未DBLP适合的结构
  * TODO: 结合nodeSplit完成点不相交
- * TODO: 边不相交要考虑路径的对成性
+ * TODO: 边不相交要考虑路径的对成性 --- Done
  * TODO: maxFlow不但能够返回最大流量，同时能返回同构图中相连的点 --- Done
  * TODO: 利用maxFlow返回的点构建重构图 --- Done
  * TODO: 对所有点都进行maxFlow算法 --- Done
@@ -31,7 +32,7 @@ import java.util.Objects;
 public class MainProcess {
     public static void main(String[] args) throws IOException {
         List<HeterogeneousNode> nodeSet = new LinkedList<>();
-        ArrayList<String[]> nodes = LoadData.loadNode();
+        ArrayList<String[]> nodes = DataReader.loadNode();
         for (String[] node : nodes) {
             HeterogeneousNode heterogeneousNode = new HeterogeneousNode();
             heterogeneousNode.id = Integer.parseInt(node[0]);
@@ -41,9 +42,9 @@ public class MainProcess {
 
         HeterogeneousGraph graph = new HeterogeneousGraph(nodeSet);
 
-        ArrayList<int[]> edges = LoadData.loadEdge();
+        ArrayList<int[]> edges = DataReader.loadEdge();
         for (int[] edge : edges) {
-            HeterogeneousEdge heterogeneousEdge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+            HeterogeneousEdge heterogeneousEdge = new HeterogeneousEdge(Config.SHARED_TIMES);
             heterogeneousEdge.setStartPoint(edge[0]);
             heterogeneousEdge.setEndPoint(edge[1]);
             graph.insertEdge(heterogeneousEdge);
@@ -51,7 +52,7 @@ public class MainProcess {
         int originNum = graph.vertexNum;
 
         // 筛选出和查询节点无关的点并删除从而节省存储空间
-        List<HeterogeneousNode> inducedNodes = GraphUtils.bfsTraverse(graph, Constants.queryNodeId);
+        List<HeterogeneousNode> inducedNodes = GraphUtils.bfsTraverse(graph, Config.queryNodeId);
 
         // 生成导出子图，简化图结构
         graph.createInducedGraph(inducedNodes);

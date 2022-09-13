@@ -1,6 +1,6 @@
 package models.graph;
 
-import global.Constants;
+import global.Config;
 import models.Edge.HeterogeneousEdge;
 import models.node.HeterogeneousNode;
 
@@ -61,7 +61,7 @@ public class HeterogeneousGraph {
         }
 
         // 为了避免指针相同，创建并复制一个新的对象
-        HeterogeneousEdge newEdge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+        HeterogeneousEdge newEdge = new HeterogeneousEdge(Config.SHARED_TIMES);
         newEdge.startPoint = edge.getStartPoint();
         newEdge.endPoint = edge.getEndPoint();
         tmp = new LinkedList<>();
@@ -111,7 +111,7 @@ public class HeterogeneousGraph {
 
         Queue<Integer> queue = new LinkedList<>();
         int currentPathLength = 0;
-        int halfMetaPath = Constants.META_PATH_LENGTH / 2;
+        int halfMetaPath = Config.META_PATH_LENGTH / 2;
 
         int nodeIndex = 0;
         for (int i = 0; i < nodeSet.size(); i++) {
@@ -142,7 +142,7 @@ public class HeterogeneousGraph {
             if (!tmpType.equals(nodeType)) {
                 currentPathLength++;
                 tmpType = nodeSet.get(indexU).nodeType;
-                if (currentPathLength >= Constants.META_PATH_LENGTH + 1) {
+                if (currentPathLength >= Config.META_PATH_LENGTH + 1) {
                     break;
                 }
             }
@@ -176,7 +176,7 @@ public class HeterogeneousGraph {
                             indexPoint = j;
                         }
                     }
-                    if ((Objects.equals(nodeSet.get(indexPoint).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
+                    if ((Objects.equals(nodeSet.get(indexPoint).nodeType, Config.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
                             && !visited.get(indexPoint)
                     ) {
                         queue.offer(indexPoint);
@@ -228,7 +228,7 @@ public class HeterogeneousGraph {
                             }
                         }
 
-                        if ((Objects.equals(nodeSet.get(indexPoint).nodeType, Constants.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
+                        if ((Objects.equals(nodeSet.get(indexPoint).nodeType, Config.META_PATH[currentPathLength]) || Objects.equals(nodeSet.get(indexU).nodeType, "virtual"))
                                 && !visited.get(indexPoint)
                         ) {
                             queue.offer(indexPoint);
@@ -334,7 +334,7 @@ public class HeterogeneousGraph {
         virtualNode.nodeType = "virtual";
 
         for (int i = 0; i < this.hashMap.get(nodeId).size(); i++) {
-            HeterogeneousEdge edge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+            HeterogeneousEdge edge = new HeterogeneousEdge(Config.SHARED_TIMES);
             edge.setStartPoint(virtualNode.id);
             int endPoint = this.hashMap.get(nodeId).get(i).getEndPoint();
             edge.setEndPoint(endPoint);
@@ -343,7 +343,7 @@ public class HeterogeneousGraph {
 
         this.hashMap.replace(nodeId, new LinkedList<>());
 
-        HeterogeneousEdge edge = new HeterogeneousEdge(Constants.SHARED_TIMES);
+        HeterogeneousEdge edge = new HeterogeneousEdge(Config.SHARED_TIMES);
         edge.setStartPoint(nodeId);
         edge.setEndPoint(virtualNode.id);
         this.insertEdge(edge);
