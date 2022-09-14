@@ -14,12 +14,12 @@ import java.util.Set;
  * the main technique is batch-search with labelling (BSL)
  */
 public class BatchLinker {
-	private int graph[][] = null;//data graph, including vertex IDs, edge IDs, and their link relationships
-	private int vertexType[] = null;//vertex -> type
-	private int edgeType[] = null;//edge -> type
+	private int[][] graph = null;//data graph, including vertex IDs, edge IDs, and their link relationships
+	private int[] vertexType = null;//vertex -> type
+	private int[] edgeType = null;//edge -> type
 	private List<Set<Integer>> labelList = null;//label a vertex if it participates in a meta-path  如果顶点参与元路径，则将其标记
 	
-	public BatchLinker(int graph[][], int vertexType[], int edgeType[]) {
+	public BatchLinker(int[][] graph, int[] vertexType, int[] edgeType) {
 		this.graph = graph;
 		this.vertexType = vertexType;
 		this.edgeType = edgeType;

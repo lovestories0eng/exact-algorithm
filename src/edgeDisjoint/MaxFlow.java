@@ -1,6 +1,7 @@
 package edgeDisjoint;
 
 
+import global.Config;
 import models.MetaPath;
 
 import java.util.*;
@@ -17,7 +18,7 @@ public class MaxFlow {
 	private MetaPath queryMPath = null;//the query meta-path
 	private Map<Integer, Set<Integer>> flowGraphMap = null;
 	// vertex id -> <vertex id, capacity>
-	private Map<Integer, Map<Integer, Integer>> flowGraph = null;
+	private Map<Integer, HashMap<Integer, Integer>> flowGraph = null;
 	private List<Set<Integer>> vertexList = null;
 		
 	public MaxFlow(int[][] graph, int[] vertexType, int[] edgeType, MetaPath queryPath) {
@@ -196,9 +197,11 @@ public class MaxFlow {
 		int result = stack.get(stack.size() - 2) >= graph.length ? stack.get(stack.size() - 2) - graph.length : stack.get(stack.size() - 2);
 		return result;
 	}
-	
+
+	// 从起始节点vertexId开始根据元路径收集到所有关联的点
 	private void collectVertices(int vertexId, Set<Integer> keepSet) {
 		//step 1: collect vertices from left to right
+		// 第一个集合代表元路径第一种类型的节点，第二个集合代表元路径第二种类型的节点，。。。依此类推
 		vertexList = new ArrayList<Set<Integer>>();
 		Set<Integer> v0Set = new HashSet<Integer>();
 		v0Set.add(vertexId);
@@ -208,8 +211,7 @@ public class MaxFlow {
 			for(int vid: vertexList.get(i) ) {
 				for(int k = 0; k < graph[vid].length; k = k + 2) {
 					int tmpVId = graph[vid][k], tmpEId = graph[vid][k + 1];
-					if (vertexType[tmpVId] == queryMPath.vertex[i + 1] 
-							&& edgeType[tmpEId] == queryMPath.edge[i]) {
+					if (vertexType[tmpVId] == queryMPath.vertex[i + 1] && edgeType[tmpEId] == queryMPath.edge[i]) {
 						if(i < queryMPath.pathLen - 1) {
 							curSet.add(tmpVId);
 						}else {
@@ -222,8 +224,11 @@ public class MaxFlow {
 			}
 			vertexList.add(curSet);
 		}
-		vertexList.get(queryMPath.pathLen).remove(vertexId);//the source node and sink node are different
-		
+
+		// 去除起始节点，因为起始节点不可能是虚拟锚点
+		vertexList.get(queryMPath.pathLen).remove(vertexId); //the source node and sink node are different
+
+		// 来回遍历两遍是因为DBLP提供的是有向图（个人理解）
 		//step 2: collect vertices from right to left
 		for (int i = queryMPath.pathLen; i > 0; i--) {
 			Set<Integer> newSet = new HashSet<Integer>();
@@ -278,24 +283,93 @@ public class MaxFlow {
 		return newIdPath;
 	}
 	
+	// private void createFlowGraph(int vertexId, Set<Integer> keepSet, Map<Integer, int[]> pathMap) {
+	// 	//step 1: collect vertices from left -> right and right -> left
+	// 	collectVertices(vertexId, keepSet);
+	// 	if(vertexList.get(queryMPath.pathLen).size() == 0)   return ;
+	//
+	// 	//step 2: create the flow network for the first (pathLen -1)-th layers
+	// 	flowGraphMap = new HashMap<Integer, Set<Integer>>();
+	// 	int NUMBER = graph.length;
+	// 	for(int i = 0; i < vertexList.size() - 1; i++) {
+	// 		for(int v : vertexList.get(i)) {
+	// 			HashSet<Integer> neiborSet = new HashSet<Integer>();
+	// 			Set<Integer> tmpSet = vertexList.get(i + 1);
+	// 			for(int nid = 0 ; nid < graph[v].length; nid += 2) {
+	// 				if(tmpSet.contains(graph[v][nid])) {
+	// 					if (flowGraphMap.containsKey(graph[v][nid])) {
+	// 						neiborSet.add(graph[v][nid] + NUMBER);
+	// 					} else {
+	// 						neiborSet.add(graph[v][nid]);
+	// 					}
+	// 				}
+	// 			}
+	// 			if(flowGraphMap.containsKey(v)) {
+	// 				flowGraphMap.put(v + NUMBER, neiborSet);
+	// 			} else {
+	// 				flowGraphMap.put(v, neiborSet);
+	// 			}
+	// 		}
+	// 	}
+	//
+	// 	//step 3: create the flow network for the pathLen-th layer
+	// 	for(int v : vertexList.get(vertexList.size() - 1)) {
+	// 		HashSet<Integer> neiborSet = new HashSet<Integer>();
+	// 		neiborSet.add(-1);//We use -1 to denote the sink node
+	// 		if(flowGraphMap.containsKey(v)) {
+	// 			flowGraphMap.put(v + NUMBER, neiborSet);
+	// 		}else {
+	// 			flowGraphMap.put(v, neiborSet);
+	// 		}
+	// 	}
+	//
+	// 	//step 4: create the sink node
+	// 	Set<Integer> neiborSet = new HashSet<Integer>();
+	// 	flowGraphMap.put(-1, neiborSet);
+	//
+	// 	//step 5: consider the paths in pathMap
+	// 	if(pathMap != null) {
+	// 		Set<int[]> newIdPathSet = getNewIdPathSet(vertexId , pathMap, NUMBER);
+	// 		for (int[] newIdPath : newIdPathSet) {
+	// 			for (int i = 1 ; i < newIdPath.length ; i++) {
+	// 				flowGraphMap.get(newIdPath[i - 1]).remove(newIdPath[i]);
+	// 				flowGraphMap.get(newIdPath[i]).add(newIdPath[i - 1]);
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	private void createFlowGraph(int vertexId, Set<Integer> keepSet, Map<Integer, int[]> pathMap) {
 		//step 1: collect vertices from left -> right and right -> left
 		collectVertices(vertexId, keepSet);
 		if(vertexList.get(queryMPath.pathLen).size() == 0)   return ;
-		
+
 		//step 2: create the flow network for the first (pathLen -1)-th layers
 		flowGraphMap = new HashMap<Integer, Set<Integer>>();
+		// 引入可共享次数的流量图
+		flowGraph = new HashMap<Integer, HashMap<Integer, Integer>>();
+		// 用于判断是正向还是反向
 		int NUMBER = graph.length;
 		for(int i = 0; i < vertexList.size() - 1; i++) {
 			for(int v : vertexList.get(i)) {
 				HashSet<Integer> neiborSet = new HashSet<Integer>();
+				// <vertex -> capacity>
+				HashMap<Integer, Integer> neighborMap = new HashMap<>();
+
+				// 元路径下一类型的节点集合
 				Set<Integer> tmpSet = vertexList.get(i + 1);
 				for(int nid = 0 ; nid < graph[v].length; nid += 2) {
+					// 判断点v的邻接链表中的点是否属于元路径下一类型的节点集合
 					if(tmpSet.contains(graph[v][nid])) {
 						if (flowGraphMap.containsKey(graph[v][nid])) {
 							neiborSet.add(graph[v][nid] + NUMBER);
 						} else {
 							neiborSet.add(graph[v][nid]);
+						}
+						if (flowGraph.containsKey(graph[v][nid])) {
+							neighborMap.put(graph[v][nid] + NUMBER, Config.SHARED_TIMES);
+						} else {
+							neighborMap.put(graph[v][nid], Config.SHARED_TIMES);
 						}
 					}
 				}
@@ -303,25 +377,39 @@ public class MaxFlow {
 					flowGraphMap.put(v + NUMBER, neiborSet);
 				} else {
 					flowGraphMap.put(v, neiborSet);
-				}	
+				}
+				if (flowGraph.containsKey(v)) {
+					flowGraph.put(v + NUMBER, neighborMap);
+				} else {
+					flowGraph.put(v, neighborMap);
+				}
 			}
 		}
-		
+
 		//step 3: create the flow network for the pathLen-th layer
 		for(int v : vertexList.get(vertexList.size() - 1)) {
 			HashSet<Integer> neiborSet = new HashSet<Integer>();
-			neiborSet.add(-1);//We use -1 to denote the sink node
+			HashMap<Integer, Integer> neighborMap = new HashMap<>();
+			neiborSet.add(-1);// We use -1 to denote the sink node
+			neighborMap.put(-1, 1);
 			if(flowGraphMap.containsKey(v)) {
 				flowGraphMap.put(v + NUMBER, neiborSet);
 			}else {
 				flowGraphMap.put(v, neiborSet);
-			}	
+			}
+			if (flowGraph.containsKey(v)) {
+				flowGraph.put(v + NUMBER, neighborMap);
+			} else {
+				flowGraph.put(v, neighborMap);
+			}
 		}
-		
+
 		//step 4: create the sink node
 		Set<Integer> neiborSet = new HashSet<Integer>();
+		HashMap<Integer, Integer> neighborMap = new HashMap<>();
 		flowGraphMap.put(-1, neiborSet);
-		
+		flowGraph.put(-1, neighborMap);
+
 		//step 5: consider the paths in pathMap
 		if(pathMap != null) {
 			Set<int[]> newIdPathSet = getNewIdPathSet(vertexId , pathMap, NUMBER);
@@ -329,6 +417,10 @@ public class MaxFlow {
 				for (int i = 1 ; i < newIdPath.length ; i++) {
 					flowGraphMap.get(newIdPath[i - 1]).remove(newIdPath[i]);
 					flowGraphMap.get(newIdPath[i]).add(newIdPath[i - 1]);
+					int curFlowForward = flowGraph.get(newIdPath[i - 1]).get(newIdPath[i]);
+					int curFlowBackward = flowGraph.get(newIdPath[i]).get(newIdPath[i - 1]);
+					flowGraph.get(newIdPath[i - 1]).put(newIdPath[i], curFlowForward - 1);
+					flowGraph.get(newIdPath[i]).put(newIdPath[i - 1], curFlowBackward  + 1);
 				}
 			}
 		}
