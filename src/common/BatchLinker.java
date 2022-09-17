@@ -56,7 +56,7 @@ public class BatchLinker {
 		
 		//label the first layer
 		Set<Integer> set0 = labelList.get(0);
-		for(int id:startSet) set0.add(id);
+		set0.addAll(startSet);
 		
 		//label the rest layers
 		Set<Integer> batchSet = startSet;
@@ -66,7 +66,7 @@ public class BatchLinker {
 			int targetVType = metaPath.vertex[index + 1], targetEType = metaPath.edge[index];
 			Set<Integer> nextBatchSet = new HashSet<Integer>();
 			for(int anchorId:batchSet) {
-				int nbArr[] = graph[anchorId];
+				int[] nbArr = graph[anchorId];
 				for(int i = 0;i < nbArr.length;i += 2) {
 					int nbVertexID = nbArr[i], nbEdgeID = nbArr[i + 1];
 					if(targetVType == vertexType[nbVertexID] && targetEType == edgeType[nbEdgeID]) {
@@ -84,8 +84,8 @@ public class BatchLinker {
 					}
 				}
 			}
-			
-			for(int id:nextBatchSet) nextLabelSet.add(id);
+
+			nextLabelSet.addAll(nextBatchSet);
 			
 			batchSet = nextBatchSet;
 		}

@@ -131,8 +131,8 @@ public class MaxFlow {
 		while (!stack.isEmpty()) {
 			boolean stackPush = false;
 			for(int v : flowGraphMap.get(stack.peek())) {
-				if ( stack.size() < requiredLen) {
-					if (!visitMap.get(stack.size() ).contains(v)) {
+				if (stack.size() < requiredLen) {
+					if (!visitMap.get(stack.size()).contains(v)) {
 						stackPush = true;
 						visitMap.get(stack.size()).add(v);
 						stack.push(v);
@@ -170,14 +170,27 @@ public class MaxFlow {
 		visitSet.add(s);
 		while(!stack.isEmpty()) {
 			boolean stackPush = false;
-			for(int v : flowGraphMap.get(stack.peek())) {
-				if (!visitSet.contains(v)) {
+			// for(int v : flowGraphMap.get(stack.peek())) {
+			// 	if (!visitSet.contains(v)) {
+			// 		stackPush = true;
+			// 		visitSet.add(v);
+			// 		stack.push(v);
+			// 		break;
+			// 	}
+			// }
+
+			for (Map.Entry<Integer, Integer> entry : flowGraph.get(stack.peek()).entrySet()) {
+				int v = entry.getKey();
+				int flow = entry.getValue();
+				if (!visitSet.contains(v) && flow > 0) {
 					stackPush = true;
 					visitSet.add(v);
 					stack.push(v);
 					break;
 				}
+				System.out.println("Key:" + entry.getKey() + " value:" + entry.getValue());
 			}
+
 			if(stack.peek() == t) {
 				break;
 			}
@@ -186,13 +199,21 @@ public class MaxFlow {
 			}
 		}
 		if(stack.isEmpty()) {
-			return -1;//there is no path
+			return -1; //there is no path
 		}
 		
-		//update the directions of edges in the flow network
+		// update the directions of edges in the flow network
 		for(int i = 0 ; i < stack.size() - 1; i++) {
 			flowGraphMap.get(stack.get(i)).remove(stack.get(i+1));
 			flowGraphMap.get(stack.get(i+1)).add(stack.get(i));
+		}
+
+		// 更新网络流量
+		for(int i = 0 ; i < stack.size() - 1; i++) {
+			int curFlowForward = flowGraph.get(stack.get(i)).get(stack.get(i+1));
+			int curFlowBackward = flowGraph.get(stack.get(i+1)).get(stack.get(i));
+			flowGraph.get(stack.get(i)).put(stack.get(i+1), curFlowForward - 1);
+			flowGraph.get(stack.get(i+1)).put(stack.get(i), curFlowBackward + 1);
 		}
 		int result = stack.get(stack.size() - 2) >= graph.length ? stack.get(stack.size() - 2) - graph.length : stack.get(stack.size() - 2);
 		return result;
@@ -200,7 +221,7 @@ public class MaxFlow {
 
 	// 从起始节点vertexId开始根据元路径收集到所有关联的点
 	private void collectVertices(int vertexId, Set<Integer> keepSet) {
-		//step 1: collect vertices from left to right
+		// step 1: collect vertices from left to right
 		// 第一个集合代表元路径第一种类型的节点，第二个集合代表元路径第二种类型的节点，。。。依此类推
 		vertexList = new ArrayList<Set<Integer>>();
 		Set<Integer> v0Set = new HashSet<Integer>();
