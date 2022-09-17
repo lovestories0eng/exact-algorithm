@@ -4,6 +4,8 @@ import global.Config;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DataReader {
     private String graphFile = null;
@@ -100,6 +102,32 @@ public class DataReader {
         }
 
         return edgeType;
+    }
+
+    //return the graph edge information
+    public HashMap<Map.Entry<Integer, Integer>, Integer> readVertexPairMapEdge(){
+        HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge = new HashMap<>();
+        // Variable-length array for each vertex
+        try{
+            BufferedReader stdin = new BufferedReader(new FileReader(graphFile));
+            String line = null;
+            while((line = stdin.readLine()) != null){
+                String[] s = line.split(" ");
+                // read vertex id
+                int vertexId = Integer.parseInt(s[0]);
+
+                // read the adjacent list
+                for(int i = 1;i < s.length; i = i + 2)
+                    vertexPairMapEdge.put(Map.entry(vertexId, Integer.parseInt(s[i])), Integer.parseInt(s[i + 1]));
+            }
+            stdin.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        // System.out.println(graphFile + " |V|=" + vertexNum + " |E|=" + edgeNum / 2);//each edge is bidirectional
+
+        return vertexPairMapEdge;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////

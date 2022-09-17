@@ -1,6 +1,7 @@
 package utils.impl;
 
 import common.BatchLinker;
+import global.Config;
 import models.MetaPath;
 import utils.InitialGraphConstructor;
 
@@ -12,15 +13,24 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
     private int[] vertexType = null;//vertex -> type
     private int[] edgeType = null;//edge -> type
     private int[] edgeUsedTimes = null;//edge -> used times
+    private HashMap<Integer, Set<Integer>> homoGraph = new HashMap<>();
     Set<Integer> vertexFound = new HashSet<>();
     HashMap<Integer, ArrayList<Integer>> pathRecordMap = new HashMap<>();
     Set<Integer> keepSet = null;
+    HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge = null;
+    // path conflict
+    HashMap<ArrayList<Integer>, Double> pathMapConflict = new HashMap<>();
+    // <vertex pair -> path with lowest conflict>
+    HashMap<Map.Entry<Integer, Integer>, ArrayList<Integer>> vertexPairMapPath = new HashMap<>();
+    // <vertex pair -> path conflict>
+    HashMap<Map.Entry<Integer, Integer>, Double> vertexPairMapConflict = new HashMap<>();
 
-    public QueryNodeExpandStrategy(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes) {
+    public QueryNodeExpandStrategy(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge) {
         this.graph = graph;
         this.vertexType = vertexType;
         this.edgeType = edgeType;
         this.edgeUsedTimes = edgeUsedTimes;
+        this.vertexPairMapEdge = vertexPairMapEdge;
     }
 
     public int[][] query(int queryId, MetaPath metaPath) {
@@ -44,8 +54,6 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
 
 
         // step 2: expand the graph from the new-found node, find possibly linked vertex
-        // <vertex pair -> path>
-        HashMap<Map.Entry<Integer, Integer>, ArrayList<ArrayList<Integer>>> vertexPairMapPath = new HashMap<>();
         newFoundVertex = this.ontHopTraverse(foundVertex, metaPath);
 
         // 存储所有路径
@@ -78,27 +86,93 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
                 }
             }
         }
-        System.out.println("Break point!");
-
-
+        // System.out.println("Break point!");
 
         // step 3: link edges between new-found vertex set and original vertex set according to the pair conflict rule
-        // path conflict
-        HashMap<ArrayList<Integer>, Integer> pathMapConflict = new HashMap<>();
-        // vertex pair conflict
-        HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapConflict = new HashMap<>();
-
-        for (int i = 0; i < allPaths.size(); i++) {
-            ArrayList<Integer> path = allPaths.get(i);
+        for (ArrayList<Integer> path : allPaths) {
             pathMapConflict.put(path, calcPathConflict(path));
         }
+
+        for (Map.Entry<ArrayList<Integer>, Double> entry : pathMapConflict.entrySet()) {
+            ArrayList<Integer> key = entry.getKey();
+            double conflict = entry.getValue();
+            int k = key.get(0);
+            int v = key.get(key.size() - 1);
+            if (vertexPairMapConflict.containsKey(Map.entry(k, v))) {
+                if (conflict < vertexPairMapConflict.get(Map.entry(k, v))) {
+                    vertexPairMapConflict.put(Map.entry(k, v), conflict);
+                    vertexPairMapPath.put(Map.entry(k, v), key);
+                }
+            } else {
+                vertexPairMapConflict.put(Map.entry(k, v), conflict);
+                vertexPairMapPath.put(Map.entry(k, v), key);
+            }
+        }
+
+        // link edges with the lowest conflict
+        Map.Entry<Integer, Integer> tmp = null;
+        double conflict = Double.POSITIVE_INFINITY;
+        for (Map.Entry<Map.Entry<Integer, Integer>, Double> entry : vertexPairMapConflict.entrySet()) {
+            if (entry.getValue() < conflict) {
+                tmp = entry.getKey();
+            }
+        }
+
+        ArrayList<Integer> path = vertexPairMapPath.get(tmp);
+        linkHomoGraph(path);
+        // update path conflict and vertex pair conflict
+        updateVertexPairMap(path);
+
+        System.out.println("Break point!");
 
         // step 4: link edges inner the new-found vertex
         return null;
     }
 
-    private int calcPathConflict(ArrayList<Integer> path) {
-        return 0;
+    private void linkHomoGraph(ArrayList<Integer> path) {
+        if (homoGraph.containsKey(path.get(0))) {
+            Set<Integer> set = homoGraph.get(path.get(0));
+            set.add(path.get(path.size() - 1));
+        } else {
+            Set<Integer> newSet = new HashSet<>();
+            newSet.add(path.get(path.size() - 1));
+            homoGraph.put(path.get(0), newSet);
+        }
+
+        if (homoGraph.containsKey(path.get(path.size() - 1))) {
+            Set<Integer> set = homoGraph.get(path.get(path.size() - 1));
+            set.add(path.get(0));
+        } else {
+            Set<Integer> newSet = new HashSet<>();
+            newSet.add(path.get(0));
+            homoGraph.put(path.get(path.size() - 1), newSet);
+        }
+
+        // 更新边容量
+        for (int i = 0; i < path.size() - 1; i++) {
+            edgeUsedTimes[vertexPairMapEdge.get(Map.entry(path.get(i), path.get(i + 1)))]--;
+        }
+
+        // 如果点对已连接则去除其在HashMap中的键值对
+        int k = path.get(0);
+        int v = path.get(path.size() - 1);
+        vertexPairMapConflict.remove(Map.entry(k, v));
+        vertexPairMapPath.remove(Map.entry(k, v));
+    }
+
+    private void updateVertexPairMap(ArrayList<Integer> path) {
+
+    }
+
+    private double calcPathConflict(ArrayList<Integer> path) {
+        double totalTimes = Config.SHARED_TIMES;
+
+        double usedTimesInTotal = 0;
+
+        for (int i = 0; i < path.size() - 1; i++) {
+            usedTimesInTotal += totalTimes - edgeUsedTimes[vertexPairMapEdge.get(Map.entry(path.get(i), path.get(i + 1)))];
+        }
+        return usedTimesInTotal / (totalTimes * (path.size() - 1));
     }
 
     private Set<Integer> ontHopTraverse(Set<Integer> startSet, MetaPath metaPath) {
