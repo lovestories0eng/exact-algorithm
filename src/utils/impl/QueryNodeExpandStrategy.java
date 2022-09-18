@@ -34,6 +34,7 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
     Set<Integer> newFoundVertex = new HashSet<>();
     // 存储上一次一跳搜索找到的点
     Set<Integer> foundVertex = new HashSet<>();
+    int pathLen = 0;
 
     public QueryNodeExpandStrategy(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge) {
         this.graph = graph;
@@ -44,6 +45,7 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
     }
 
     public int[][] query(int queryId, MetaPath metaPath) {
+        this.pathLen = metaPath.pathLen + 1;
         if (metaPath.vertex[0] != vertexType[queryId]) {
             System.out.println("查询节点类型与元路径类型不匹配！");
             return null;
@@ -58,9 +60,11 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
         BatchLinker batchLinker = new BatchLinker(graph, vertexType, edgeType);
         keepSet = batchLinker.link(queryId, metaPath);
 
-        while (foundVertex.size() != 0) {
+        while (true) {
             // step 2: expand the graph from the new-found node, find possibly linked vertex
             newFoundVertex = this.oneHopTraverse(foundVertex, metaPath, true);
+            // 如果找不到新的点则结束
+            if (newFoundVertex.size() == 0) break;
 
             // 根据树结构得到所有路径
             createPathSet(foundVertex, pathRecordMap);
@@ -93,9 +97,7 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
                 homeGraphBuilder(path, false);
                 // update path conflict and vertex pair conflict
                 updateVertexPairMap(path, false);
-
             }
-
 
             // step 4: link edges inner the new-found vertex
             oneHopTraverse(foundVertex, metaPath, false);
@@ -133,7 +135,10 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
                 // }
                 // System.out.println();
             }
+            System.out.println("Break point!");
         }
+
+        System.out.println("Break point!");
 
         return null;
     }
@@ -215,6 +220,8 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
             int v = path.get(path.size() - 1);
             vertexPairMapConflict.remove(Map.entry(k, v));
             vertexPairMapPath.remove(Map.entry(k, v));
+            // 优化：
+            // vertexPairMapAllPath.remove(Map.entry(k, v));
         } else {
             pathMapConflict.remove(path);
             allPaths.remove(path);
@@ -224,7 +231,7 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
             while (iterator.hasNext()) {
                 entry = iterator.next();
                 ArrayList<Integer> tmpPath = entry.getKey();
-                if (calcPathConflict(tmpPath)  == -1) {
+                if (calcPathConflict(tmpPath) == -1) {
                     iterator.remove();
                 }
             }
@@ -436,8 +443,9 @@ public class QueryNodeExpandStrategy implements InitialGraphConstructor {
                 int tempVertex = queue.poll();
                 ArrayList<Integer> tempPath = path.poll();
 
-                if (pathRecordMap.get(tempVertex) == null || reached.contains(tempVertex)) {
-                    allPaths.add(tempPath);
+                if ((pathRecordMap.get(tempVertex) == null || reached.contains(tempVertex))) {
+                    if (Objects.requireNonNull(tempPath).size() == pathLen)
+                        allPaths.add(tempPath);
                 } else {
                     ArrayList<Integer> tmpArr = pathRecordMap.get(tempVertex);
                     for (Integer integer : tmpArr) {
