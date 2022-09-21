@@ -2,13 +2,17 @@ package global;
 
 import methods.DataReader;
 import models.MetaPath;
-import utils.impl.QueryNodeExpandStrategy;
-import utils.impl.QueryNodeExpandStrategyCopy;
+import utils.impl.QueryNodeExpandStrategyDivided;
+import utils.impl.QueryNodeExpandStrategyOptimized;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * SHARED_TIMES: 1 -> 31s -> 18.7s
+ * SHARED_TIMES: 2 -> 391s -> 104.3s
+ * **/
 public class Test {
     public static void main(String[] args) {
         DataReader dataReader = new DataReader(Config.dblpGraph, Config.dblpVertex, Config.dblpEdge);
@@ -25,7 +29,8 @@ public class Test {
         MetaPath metaPath = new MetaPath(vertex, edge);
 
         // QueryNodeExpandStrategy queryNodeExpandStrategy = new QueryNodeExpandStrategy(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
-        QueryNodeExpandStrategyCopy queryNodeExpandStrategy = new QueryNodeExpandStrategyCopy(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
+        QueryNodeExpandStrategyOptimized queryNodeExpandStrategy = new QueryNodeExpandStrategyOptimized(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
+        // QueryNodeExpandStrategyDivided queryNodeExpandStrategy = new QueryNodeExpandStrategyDivided(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
 
         queryNodeExpandStrategy.query(Config.queryNodeId, metaPath);
 
