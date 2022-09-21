@@ -3,6 +3,7 @@ package global;
 import methods.DataReader;
 import models.MetaPath;
 import utils.impl.QueryNodeExpandStrategy;
+import utils.impl.QueryNodeExpandStrategyCopy;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,7 +24,9 @@ public class Test {
         int[] vertex = {1, 0, 1}, edge = {3, 0};
         MetaPath metaPath = new MetaPath(vertex, edge);
 
-        QueryNodeExpandStrategy queryNodeExpandStrategy = new QueryNodeExpandStrategy(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
+        // QueryNodeExpandStrategy queryNodeExpandStrategy = new QueryNodeExpandStrategy(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
+        QueryNodeExpandStrategyCopy queryNodeExpandStrategy = new QueryNodeExpandStrategyCopy(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
+
         queryNodeExpandStrategy.query(Config.queryNodeId, metaPath);
 
 
