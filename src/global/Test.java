@@ -10,8 +10,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * SHARED_TIMES: 1 -> 31s -> 18.7s
- * SHARED_TIMES: 2 -> 391s -> 104.3s
+ * SHARED_TIMES: 1 -> 22.73s
+ * SHARED_TIMES: 2 -> 159.63s
+ * SHARED_TIMES: 3 -> 201.08s
+ * SHARED_TIMES: 4 -> 545.12s
+ * SHARED_TIMES: 5 -> 796.33s
+ * SHARED_TIMES: 6 -> 800.55s
  * **/
 public class Test {
     public static void main(String[] args) {
@@ -33,11 +37,5 @@ public class Test {
         // QueryNodeExpandStrategyDivided queryNodeExpandStrategy = new QueryNodeExpandStrategyDivided(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
 
         queryNodeExpandStrategy.query(Config.queryNodeId, metaPath);
-
-
-        // HomoBTruss homoBTruss = new HomoBTruss(graph, vertexType, edgeType);
-        // Set<Integer> rsSet1 = homoBTruss.query(Config.queryNodeId, metaPath, Config.k);
-        // System.out.println("finished");
-
     }
 }

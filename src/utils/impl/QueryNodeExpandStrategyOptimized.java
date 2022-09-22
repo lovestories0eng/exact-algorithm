@@ -111,6 +111,59 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         long endTime = System.currentTimeMillis();
         System.out.println("运行时间：" + (endTime - startTime) + "ms");
 
+        double totalUsedTimes = 0;
+        for (Map.Entry<Integer, Set<Integer>> integerSetEntry : homoGraph.entrySet()) {
+            Set<Integer> adjacent = integerSetEntry.getValue();
+            totalUsedTimes += adjacent.size() * metaPath.pathLen;
+        }
+
+        totalUsedTimes /= 2;
+
+        double usedPercent = totalUsedTimes / (Config.SHARED_TIMES * edgeUsedTimes.length);
+        System.out.println("边总使用次数：" + totalUsedTimes);
+        System.out.println("共享次数使用百分比：" + usedPercent);
+
+        // double totalUsedTimes = 0;
+        // int count = 0;
+        // // 遍历所有的点对
+        // for (Map.Entry<Map.Entry<Integer, Integer>, Integer> integerEntry : vertexPairMapEdge.entrySet()) {
+        //     // 如果此点对在找到的点集合中
+        //     if (vertexFound.contains(integerEntry.getKey().getKey()) && vertexFound.contains(integerEntry.getKey().getValue())) {
+        //         totalUsedTimes += Config.SHARED_TIMES - edgeUsedTimes[integerEntry.getValue()];
+        //         count++;
+        //     }
+        // }
+        // double usedPercent = totalUsedTimes / (Config.SHARED_TIMES * count);
+        // System.out.println("边总使用次数：" + totalUsedTimes);
+        // System.out.println("共享次数使用百分比：" + usedPercent);
+
+        // double totalUsedTimes = 0;
+        // for (int edgeUsedTime : edgeUsedTimes) {
+        //     totalUsedTimes += Config.SHARED_TIMES - edgeUsedTime;
+        // }
+        // double usedPercent = totalUsedTimes / (Config.SHARED_TIMES * edgeUsedTimes.length);
+        // System.out.println("边总使用次数：" + totalUsedTimes);
+        // System.out.println("共享次数使用百分比：" + usedPercent);
+
+
+        System.out.println("每次迭代中新的点对数");
+        for (Integer integer : vertexPairRecorder) {
+            System.out.println(integer);
+        }
+
+        int vertexInTotal = 0;
+        int edgeInTotal = 0;
+        Map.Entry<Integer, Set<Integer>> entry;
+        for (Map.Entry<Integer, Set<Integer>> integerSetEntry : homoGraph.entrySet()) {
+            entry = integerSetEntry;
+            vertexInTotal++;
+            edgeInTotal += entry.getValue().size();
+        }
+
+        edgeInTotal /= 2;
+        System.out.println("同构图点数：" + vertexInTotal);
+        System.out.println("同构图边数：" + edgeInTotal);
+
         return null;
     }
 
@@ -127,8 +180,9 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     }
 
     private void traverseVertexPair() {
+        // 监控每一次找到的点的数量
         vertexPairRecorder.add(vertexPairMapConflict.size());
-        System.out.println(vertexPairMapConflict.size());
+        // System.out.println(vertexPairMapConflict.size());
         // 为什么有时候vertexPairMapConflict大小不变
         while (vertexPairMapConflict.size() != 0) {
             double minConflict = Double.POSITIVE_INFINITY;
