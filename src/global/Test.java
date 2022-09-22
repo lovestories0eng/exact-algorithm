@@ -16,6 +16,10 @@ import java.util.Map;
  * SHARED_TIMES: 4 -> 545.12s
  * SHARED_TIMES: 5 -> 796.33s
  * SHARED_TIMES: 6 -> 800.55s
+ * SHARED_TIMES: 7 -> 609.94s
+ * SHARED_TIMES: 8 -> 590.18s
+ * SHARED_TIMES: 9 -> 611.09s
+ * SHARED_TIMES: 10 -> 574.69s
  * **/
 public class Test {
     public static void main(String[] args) {

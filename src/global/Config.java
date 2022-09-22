@@ -18,7 +18,7 @@ public class Config {
     // public static int k = 1;
 
     // 点的共享次数
-    public static int SHARED_TIMES = 3;
+    public static int SHARED_TIMES = 10;
     // 元路径
     public static String[] META_PATH = new String[]{"A", "P", "A", "sink"};
     // 元路径长度
