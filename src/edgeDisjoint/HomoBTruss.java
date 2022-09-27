@@ -54,14 +54,14 @@ public class HomoBTruss {
         if (!keepSet.contains(queryId)) return null;
 
         // TODO: execute max-flow algorithm for each element in the keepSet to build a homogeneous graph
-        MaxFlow maxFlow = new MaxFlow(graph, vertexType, edgeType, queryMPath);
-        for (int vid : keepSet) {
-            Map<Integer, int[]> pathMap = new HashMap<Integer, int[]>();
-            //
-            while (maxFlow.obtainEPaths(vid, keepSet, pathMap).size() > 0) {
-
-            }
-        }
+        // MaxFlow maxFlow = new MaxFlow(graph, vertexType, edgeType, queryMPath);
+        // for (int vid : keepSet) {
+        //     Map<Integer, int[]> pathMap = new HashMap<Integer, int[]>();
+        //     //
+        //     while (maxFlow.obtainEPaths(vid, keepSet, pathMap).size() > 0) {
+        //
+        //     }
+        // }
 
         // TODO: execute truss decomposition algorithm to get a k-truss containing the queryNode
 
