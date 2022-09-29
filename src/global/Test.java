@@ -10,6 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * TODO: 能够找打的最大k-truss与共享次数的关系
+ * TODO: 能够找到的
+ * **/
+
+/**
  * SHARED_TIMES: 1 -> 22.73s
  * SHARED_TIMES: 2 -> 159.63s
  * SHARED_TIMES: 3 -> 201.08s
@@ -36,8 +41,10 @@ public class Test {
         int[] vertex = {1, 0, 1}, edge = {3, 0};
         MetaPath metaPath = new MetaPath(vertex, edge);
 
+        int hops = 2;
+
         // QueryNodeExpandStrategy queryNodeExpandStrategy = new QueryNodeExpandStrategy(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
-        QueryNodeExpandStrategyOptimized queryNodeExpandStrategy = new QueryNodeExpandStrategyOptimized(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
+        QueryNodeExpandStrategyOptimized queryNodeExpandStrategy = new QueryNodeExpandStrategyOptimized(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge, hops);
         // QueryNodeExpandStrategyDivided queryNodeExpandStrategy = new QueryNodeExpandStrategyDivided(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge);
 
         queryNodeExpandStrategy.query(Config.queryNodeId, metaPath);

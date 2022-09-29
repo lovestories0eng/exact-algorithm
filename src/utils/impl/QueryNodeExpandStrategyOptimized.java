@@ -14,6 +14,7 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     private final int[] edgeType;//edge -> type
     private final int[] edgeUsedTimes;//edge -> used times
     private final HashMap<Integer, Set<Integer>> homoGraph = new HashMap<>();
+    int hops;
     // 记录找到的所有节点
     Set<Integer> vertexFound = new HashSet<>();
     HashMap<Integer, ArrayList<Integer>> pathRecordMap = new HashMap<>();
@@ -44,12 +45,13 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     // 存储vertexPair的大小
     ArrayList<Integer> vertexPairRecorder = new ArrayList<>();
 
-    public QueryNodeExpandStrategyOptimized(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge) {
+    public QueryNodeExpandStrategyOptimized(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge, int hops) {
         this.graph = graph;
         this.vertexType = vertexType;
         this.edgeType = edgeType;
         this.edgeUsedTimes = edgeUsedTimes;
         this.vertexPairMapEdge = vertexPairMapEdge;
+        this.hops = hops;
     }
 
     public int[][] query(int queryId, MetaPath metaPath) {
@@ -89,7 +91,9 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         }
         if(!keepSet.contains(queryId)) return null;
 
-        while (true) {
+        int curHop = 0;
+
+        while (curHop < this.hops) {
             // step 3: expand the graph from the new-found node, find possibly linked vertex
             newFoundVertex = this.oneHopTraverse(foundVertex, metaPath, true);
             // 如果找不到新的点则结束
@@ -107,6 +111,7 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
             initPathMapConflictAndConflictMapVertexPairPath();
             traverseVertexPair();
             System.out.println("Break point!");
+            curHop++;
         }
         long endTime = System.currentTimeMillis();
         System.out.println("运行时间：" + (endTime - startTime) + "ms");
@@ -163,6 +168,10 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         edgeInTotal /= 2;
         System.out.println("同构图点数：" + vertexInTotal);
         System.out.println("同构图边数：" + edgeInTotal);
+
+        TrussDecomposition trussDecomposition = new TrussDecomposition(homoGraph, 3);
+        trussDecomposition.executeDecompose();
+        // System.out.println("Break point!");
 
         return null;
     }

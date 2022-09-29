@@ -156,6 +156,7 @@ public class MaxFlow {
                 stack.pop();
             }
         }
+
         if (stack.isEmpty()) {// there is no meta-path
             return null;
         }
@@ -202,6 +203,7 @@ public class MaxFlow {
                 stack.pop();
             }
         }
+
         if (stack.isEmpty()) {
             return -1; //there is no path
         }
