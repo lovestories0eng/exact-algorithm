@@ -1,5 +1,13 @@
 package global;
 
+// INPUT
+// SHARED_TIME
+// K
+
+// OUTPUT
+// result.size()
+// time
+// maxK
 public class Config {
     public static String root = "src";
 
@@ -17,13 +25,13 @@ public class Config {
     // SHARED_TIME = 3
     // public static int k = 30;
     // SHARED_TIME = 2
-    public static int k = 65;
+    // public static int k = 3;
     // SHARED_TIME = 1
     // public static int k = 61;
-    // public static int k = 3;
+    public static int k = 3;
 
     // 点的共享次数
-    public static int SHARED_TIMES = 2;
+    public static int SHARED_TIMES = 10;
     // 元路径
     public static String[] META_PATH = new String[]{"A", "P", "A", "sink"};
     // 元路径长度

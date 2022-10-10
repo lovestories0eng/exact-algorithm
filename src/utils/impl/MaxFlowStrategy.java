@@ -123,7 +123,7 @@ public class MaxFlowStrategy {
         System.out.println("同构图点数：" + vertexInTotal);
         System.out.println("同构图边数：" + edgeInTotal);
 
-        TrussDecomposition trussDecomposition = new TrussDecomposition(homoGraph, Config.k);
+        TrussDecomposition trussDecomposition = new TrussDecomposition(homoGraph);
         trussDecomposition.executeDecompose();
 
         return null;
