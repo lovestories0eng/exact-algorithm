@@ -14,6 +14,7 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     private final int[] vertexType;//vertex -> type
     private final int[] edgeType;//edge -> type
     private final int[] edgeUsedTimes;//edge -> used times
+    private final int[] vertexUsedTimes;
     private final HashMap<Integer, Set<Integer>> homoGraph = new HashMap<>();
     int hops;
     // 记录找到的所有节点
@@ -50,11 +51,12 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     // 存储vertexPair的大小
     ArrayList<Integer> vertexPairRecorder = new ArrayList<>();
 
-    public QueryNodeExpandStrategyOptimized(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge, int hops) {
+    public QueryNodeExpandStrategyOptimized(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, int[] vertexUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge, int hops) {
         this.graph = graph;
         this.vertexType = vertexType;
         this.edgeType = edgeType;
         this.edgeUsedTimes = edgeUsedTimes;
+        this.vertexUsedTimes = vertexUsedTimes;
         this.vertexPairMapEdge = vertexPairMapEdge;
         this.hops = hops;
     }
@@ -94,10 +96,10 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                     int nbVId = graph[id][i], nbEId = graph[id][i + 1];
                     if (vertexType[nbVId] == SECONDVertexTYPE && edgeType[nbEId] == SECONDEdgeTYPE) {
                         count++;
-                        if (count >= (Config.k - 1) / Config.SHARED_TIMES) break;
+                        if (count >= ((Config.k - 1) / Config.SHARED_TIMES)) break;
                     }
                 }
-                if (count < (Config.k - 1) / Config.SHARED_TIMES) keepIter.remove();
+                if (count < ((Config.k - 1) / Config.SHARED_TIMES)) keepIter.remove();
             }
         }
 
@@ -156,37 +158,97 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     private void createHomoGraph(MetaPath metaPath) {
         long startTime = System.currentTimeMillis();
         int curHop = 0;
+        HashMap<Integer, Integer> vertexMapDegrees;
+
         while (curHop < this.hops) {
-            // step 3: expand the graph from the new-found node, find possibly linked vertex
-            newFoundVertex = this.oneHopTraverse(foundVertex, metaPath, true);
+            if (curHop != 0) {
+                // step 3: link edges inner the new-found vertex
+                newFoundVertex = this.oneHopTraverse(foundVertex, metaPath, false);
+                if (newFoundVertex.size() != 0) {
+                    // 根据树结构得到所有路径
+                    createPathSet(foundVertex, pathRecordMap);
+                    // step 4: link edges between new-found vertex set and original vertex set according to the pair conflict rule
+                    initPathMapConflict();
+                    // link edges with the lowest conflict utils vertex pairs are linked or no edges exists
+                    foundVertex = new HashSet<>();
+                    traverseVertexPair();
+                }
+            }
+            // step 5: expand the graph from the new-found node, find possibly linked vertex
+
+            vertexMapDegrees = new HashMap<>();
+
+            newFoundVertex = oneHopTraverse(foundVertex, metaPath, true);
             // 如果找不到新的点则结束
             if (newFoundVertex.size() == 0) break;
-            // 根据树结构得到所有路径
             createPathSet(foundVertex, pathRecordMap);
-            // step 4: link edges between new-found vertex set and original vertex set according to the pair conflict rule
-            initPathMapConflictAndConflictMapVertexPairPath();
-            // link edges with the lowest conflict utils vertex pairs are linked or no edges exists
-            foundVertex = new HashSet<>();
+
+            // 记录各个点的相关度数
+            for (ArrayList<Integer> allPath : allPaths) {
+                int vertexId = allPath.get(0);
+                if (!vertexMapDegrees.containsKey(vertexId)) {
+                    vertexMapDegrees.put(vertexId, 1);
+                } else {
+                    int oldDegree = vertexMapDegrees.get(vertexId);
+                    vertexMapDegrees.put(vertexId, oldDegree + 1);
+                }
+            }
+
+            // 加上原来同构图中的度数
+            for (Map.Entry<Integer, Integer> entry : vertexMapDegrees.entrySet()) {
+                int vertexId = entry.getKey();
+                if (homoGraph.containsKey(vertexId)) {
+                    int oldDegree = vertexMapDegrees.get(vertexId);
+                    vertexMapDegrees.put(vertexId, oldDegree + homoGraph.get(vertexId).size());
+                }
+            }
+
+            System.out.println("Break point!");
+            initPathMapConflict();
+            // initPathMapConflict(vertexMapDegrees);
             traverseVertexPair();
-            // step 5: link edges inner the new-found vertex
-            // TODO: 通过度数限制进行剪枝
-            oneHopTraverse(foundVertex, metaPath, false);
-            createPathSet(foundVertex, pathRecordMap);
-            initPathMapConflictAndConflictMapVertexPairPath();
-            traverseVertexPair();
-            // System.out.println("Break point!");
             curHop++;
+
+            // 如果已经到了最后一轮则内扩并且结束循环
+            if (curHop == this.hops) {
+                // step 3: link edges inner the new-found vertex
+                newFoundVertex = this.oneHopTraverse(foundVertex, metaPath, false);
+                if (newFoundVertex.size() != 0) {
+                    // 根据树结构得到所有路径
+                    createPathSet(foundVertex, pathRecordMap);
+                    // step 4: link edges between new-found vertex set and original vertex set according to the pair conflict rule
+                    initPathMapConflict();
+                    // link edges with the lowest conflict utils vertex pairs are linked or no edges exists
+                    foundVertex = new HashSet<>();
+                    traverseVertexPair();
+                }
+            }
         }
         long endTime = System.currentTimeMillis();
         System.out.println("运行时间：" + (endTime - startTime) + "ms");
     }
 
-    private void initPathMapConflictAndConflictMapVertexPairPath() {
+    private void initPathMapConflict() {
         pathMapConflict = new HashMap<>();
         for (ArrayList<Integer> tmpPath : allPaths) {
             double conflict = calcPathConflict(tmpPath);
             if (conflict != -1) {
                 pathMapConflict.put(tmpPath, conflict);
+            }
+        }
+        this.initVertexPairMap();
+    }
+
+    // 函数重载
+    private void initPathMapConflict(HashMap<Integer, Integer> vertexMapDegrees) {
+        pathMapConflict = new HashMap<>();
+        for (ArrayList<Integer> tmpPath : allPaths) {
+            int vertexId = tmpPath.get(0);
+            if (vertexMapDegrees.get(vertexId) >= Config.k - 1) {
+                double conflict = calcPathConflict(tmpPath);
+                if (conflict != -1) {
+                    pathMapConflict.put(tmpPath, conflict);
+                }
             }
         }
         this.initVertexPairMap();
@@ -491,11 +553,16 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                         if (index == 0) {
                             startPoint = anchorId;
                         }
+                        // 如果这次找到的是目标类型节点
                         if (index == metaPath.pathLen - 1) {
                             if (flag) {
                                 // 目的是为了找到没有找到过的点，因此如果发现此点已经被找到则跳过
                                 if (vertexFound.contains(nbVertexId))
                                     continue;
+                                // TODO: 通过度数限制进行剪枝
+                                // 同时如果新的点的度数不足k - 1则直接去掉
+
+
                             } else {
                                 // 只寻找在已知图中的边且必须是新找到的点集合中的
                                 if (!foundVertex.contains(nbVertexId) || nbVertexId == startPoint) {

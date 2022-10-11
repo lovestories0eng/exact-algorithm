@@ -40,12 +40,12 @@ public class Test {
         //
         // queryNodeExpandStrategy.query(Config.queryNodeId, metaPath, 0);
 
-        int[] points = {2714};
+        int[] points = {101350};
 
         // int[] hops = {1, 2, 3, 4, 5, 6};
-        int[] hops = {2};
+        int[] hops = {10};
 
-        int[] sharedTimes = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        int[] sharedTimes = {1};
 
         for (int point : points) {
             System.out.println("点：" + point);
@@ -57,10 +57,12 @@ public class Test {
 
                     // 边不相交，存储边的使用次数
                     int[] edgeUsedTimes = new int[edgeType.length];
+                    int[] vertexUsedTime = new int[vertexType.length];
                     Arrays.fill(edgeUsedTimes, Config.SHARED_TIMES);
+                    Arrays.fill(vertexUsedTime, Config.SHARED_TIMES);
 
-                    QueryNodeExpandStrategyOptimized queryNodeExpandStrategy = new QueryNodeExpandStrategyOptimized(graph, vertexType, edgeType, edgeUsedTimes, vertexPairMapEdge, i);
-                    queryNodeExpandStrategy.query(Config.queryNodeId, metaPath, 0);
+                    QueryNodeExpandStrategyOptimized queryNodeExpandStrategy = new QueryNodeExpandStrategyOptimized(graph, vertexType, edgeType, edgeUsedTimes, vertexUsedTime, vertexPairMapEdge, i);
+                    queryNodeExpandStrategy.query(Config.queryNodeId, metaPath, 1);
                 }
             }
         }

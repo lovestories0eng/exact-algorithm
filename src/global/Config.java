@@ -19,8 +19,9 @@ public class Config {
     public static String dblpEdge = dblpRoot + "edge.txt";
     // 查询节点ID
     // public static int queryNodeId = 0;
-    public static int queryNodeId = 552985;
+    // public static int queryNodeId = 552985;
     // public static int queryNodeId = 2714;
+    public static int queryNodeId = 101350;
     // k值
     // SHARED_TIME = 3
     // public static int k = 30;
@@ -28,7 +29,7 @@ public class Config {
     // public static int k = 3;
     // SHARED_TIME = 1
     // public static int k = 61;
-    public static int k = 3;
+    public static int k = 4;
 
     // 点的共享次数
     public static int SHARED_TIMES = 10;
