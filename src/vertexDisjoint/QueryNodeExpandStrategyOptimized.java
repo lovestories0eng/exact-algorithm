@@ -1,13 +1,13 @@
-package utils.impl;
+package vertexDisjoint;
 
 import common.BatchLinker;
 import global.Config;
 import models.MetaPath;
 import utils.InitialGraphConstructor;
+import utils.impl.TrussDecomposition;
 
 import java.util.*;
 
-// TODO: 删除vertexPair的同时更新阶梯索引
 // 从查询点扩展构建初始图
 public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor {
     private final int[][] graph;//data graph, including vertex IDs, edge IDs, and their link relationships
@@ -29,14 +29,12 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     // <vertex pair -> path conflict>
     HashMap<Map.Entry<Integer, Integer>, Double> vertexPairMapConflict;
     // <vertex pair -> path conflict ordered>
-    // TODO: 点对的冲突度是呈阶梯的，在排序好之后记录每一个冲突度的阶梯
-    // ArrayList<Map.Entry<Integer, Integer>> vertexPairMapConflictOrdered;
     // <vertex pair -> all path between two vertex>
     HashMap<Map.Entry<Integer, Integer>, ArrayList<ArrayList<Integer>>> vertexPairMapAllPath;
     // 存储所有路径
     ArrayList<ArrayList<Integer>> allPaths = new ArrayList<>();
-    // <edge id -> ArrayList<path>>
-    HashMap<Integer, ArrayList<ArrayList<Integer>>> edgeMapPath;
+    // <vertex id -> ArrayList<path>>
+    HashMap<Integer, ArrayList<ArrayList<Integer>>> vertexMapPath;
     // 存储通过一跳搜索找到的新的节点
     Set<Integer> newFoundVertex = new HashSet<>();
     // 存储上一次一跳搜索找到的点
@@ -44,12 +42,14 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     int pathLen = 0;
     double globalVertexPairConflict;
     double globalPathConflict;
-    // 存储冲突度最小的点对集合
-    HashMap<Double, ArrayList<ArrayList<Integer>>> conflictMapVertexPairPath;
-    // 存储阶梯冲突度的索引
     HashMap<Double, Integer> stepConflictIndex = new HashMap<>();
     // 存储vertexPair的大小
     ArrayList<Integer> vertexPairRecorder = new ArrayList<>();
+    // 把点对根据冲突度进行排序
+    ArrayList<Map.Entry<Integer, Integer>> vertexPairMapConflictOrdered;
+    // 存储各各冲突度的点对数量
+    HashMap<Double, Integer> conflictMapVertexPairNum;
+
 
     public QueryNodeExpandStrategyOptimized(int[][] graph, int[] vertexType, int[] edgeType, int[] edgeUsedTimes, int[] vertexUsedTimes, HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge, int hops) {
         this.graph = graph;
@@ -83,7 +83,7 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         keepSet = batchLinker.link(queryId, metaPath);
 
         //step 2: perform pruning
-        // 根据路径的第一条边删除了一遍出度<(k / a)的节点
+        // 根据路径的第一条边删除了一遍 出度 < (k / a) 的节点
         // SECONDVertexTYPE: P, SECONDEdgeTYPE: A -> P
         if (mode == 1) {
             int SECONDVertexTYPE = metaPath.vertex[1], SECONDEdgeTYPE = metaPath.edge[0];
@@ -102,18 +102,13 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                 if (count < ((Config.k - 1) / Config.SHARED_TIMES)) keepIter.remove();
             }
         }
-
         if (!keepSet.contains(queryId)) return null;
-
         this.createHomoGraph(metaPath);
         this.homoGraphAnalyzer(metaPath);
-
         TrussDecomposition trussDecomposition = new TrussDecomposition(homoGraph);
-
         HashMap<Integer, Integer> maxK;
 
         Set<Integer> result;
-
         if (mode == 0) {
             maxK = trussDecomposition.findMaxKTruss();
             for (Map.Entry<Integer, Integer> entry : maxK.entrySet()) {
@@ -134,7 +129,7 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
             totalUsedTimes += adjacent.size() * metaPath.pathLen;
         }
         totalUsedTimes /= 2;
-        double usedPercent = totalUsedTimes / (Config.SHARED_TIMES * edgeUsedTimes.length);
+        double usedPercent = totalUsedTimes / (Config.SHARED_TIMES * vertexUsedTimes.length);
         System.out.println("边总使用次数：" + totalUsedTimes);
         System.out.println("共享次数使用百分比：" + usedPercent);
 
@@ -159,7 +154,6 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         long startTime = System.currentTimeMillis();
         int curHop = 0;
         HashMap<Integer, Integer> vertexMapDegrees;
-
         while (curHop < this.hops) {
             if (curHop != 0) {
                 // step 3: link edges inner the new-found vertex
@@ -175,15 +169,13 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                 }
             }
             // step 5: expand the graph from the new-found node, find possibly linked vertex
-
             vertexMapDegrees = new HashMap<>();
-
             newFoundVertex = oneHopTraverse(foundVertex, metaPath, true);
             // 如果找不到新的点则结束
             if (newFoundVertex.size() == 0) break;
             createPathSet(foundVertex, pathRecordMap);
 
-            // 记录各个点的相关度数
+            // 记录各个点的相关度数（外扩的）
             for (ArrayList<Integer> allPath : allPaths) {
                 int vertexId = allPath.get(0);
                 if (!vertexMapDegrees.containsKey(vertexId)) {
@@ -194,21 +186,33 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                 }
             }
 
-            // 加上原来同构图中的度数
-            for (Map.Entry<Integer, Integer> entry : vertexMapDegrees.entrySet()) {
-                int vertexId = entry.getKey();
-                if (homoGraph.containsKey(vertexId)) {
-                    int oldDegree = vertexMapDegrees.get(vertexId);
-                    vertexMapDegrees.put(vertexId, oldDegree + homoGraph.get(vertexId).size());
+            HashMap<Integer, Integer> homoVertexMapDegrees = new HashMap<>();
+            if (curHop != 0) {
+                // 得到原来同构图中的度数（内部的）
+                for (Map.Entry<Integer, Integer> entry : vertexMapDegrees.entrySet()) {
+                    int vertexId = entry.getKey();
+                    homoVertexMapDegrees.put(vertexId, homoGraph.get(vertexId).size());
+                }
+                // 加上同构图中的度数
+                for (Map.Entry<Integer, Integer> entry : homoVertexMapDegrees.entrySet()) {
+                    vertexMapDegrees.putIfAbsent(entry.getKey(), 0);
+                    int oldDegree = vertexMapDegrees.get(entry.getKey());
+                    vertexMapDegrees.put(entry.getKey(), oldDegree + entry.getValue());
                 }
             }
+            if (curHop == 0)
+                initPathMapConflict(vertexMapDegrees);
+            // else
+            //   initPathMapConflict(homoVertexMapDegrees);
+            // 如果是点不相交，为了能够扩得出去放松条件
+            else
+                initPathMapConflict(vertexMapDegrees);
 
-            System.out.println("Break point!");
-            initPathMapConflict();
-            // initPathMapConflict(vertexMapDegrees);
+            // 在内部团约束之后如果发现找不到新的路径则退出
+            if (this.pathMapConflict.size() == 0) break;
             traverseVertexPair();
             curHop++;
-
+            System.out.println(curHop);
             // 如果已经到了最后一轮则内扩并且结束循环
             if (curHop == this.hops) {
                 // step 3: link edges inner the new-found vertex
@@ -251,6 +255,16 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                 }
             }
         }
+        // 删除掉被剪枝掉的边
+        Iterator<Map.Entry<Integer, ArrayList<ArrayList<Integer>>>> iterator = this.vertexMapPath.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, ArrayList<ArrayList<Integer>>> entry = iterator.next();
+            ArrayList<ArrayList<Integer>> paths = entry.getValue();
+            paths.removeIf(tmpPath -> !pathMapConflict.containsKey(tmpPath));
+            if (paths.size() == 0)
+                iterator.remove();
+        }
+
         this.initVertexPairMap();
     }
 
@@ -258,9 +272,9 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         // 监控每一次找到的点的数量
         vertexPairRecorder.add(vertexPairMapConflict.size());
         while (vertexPairMapConflict.size() != 0) {
+            // TODO: 利用vertexPairMapConflictOrdered获得tmp
+
             double minConflict = Double.POSITIVE_INFINITY;
-            // TODO: 把点对按冲突度进行分组，实现O(1)时间内找到冲突度最小的点对
-            // TODO: 如果vertexPair已连边则跳过
             Map.Entry<Integer, Integer> tmp = null;
             int count = 0;
             for (Map.Entry<Map.Entry<Integer, Integer>, Double> entry : vertexPairMapConflict.entrySet()) {
@@ -275,12 +289,13 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                 // 如果已经找到了全局最小冲突值则跳出循环
                 if (minConflict == globalVertexPairConflict) break;
             }
+
             ArrayList<Integer> path = vertexPairMapPath.get(tmp);
 
             // 把发现的点加入”已找到点“集合中
             vertexFound.add(path.get(path.size() - 1));
             foundVertex.add(path.get(path.size() - 1));
-            homeGraphBuilder(path);
+            homoGraphBuilder(path);
             // update path conflict and vertex pair conflict
             updateVertexPairMap(path);
         }
@@ -302,15 +317,17 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
             }
             int k = key.get(0);
             int v = key.get(key.size() - 1);
+
             // 判断边容量是否大于0
             boolean flag = true;
             for (int i = 0; i < key.size() - 1; i++) {
-                int tmpK = key.get(i), tmpV = key.get(i + 1);
-                if (edgeUsedTimes[vertexPairMapEdge.get(Map.entry(tmpK, tmpV))] <= 0) {
+                int tmpV = key.get(i + 1);
+                if (vertexUsedTimes[tmpV] <= 0) {
                     flag = false;
                     break;
                 }
             }
+
             if (flag) {
                 // 记录点对间的所有路径
                 if (vertexPairMapAllPath.containsKey(Map.entry(k, v))) {
@@ -337,179 +354,244 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
             }
         }
 
-        // vertexPairMapConflictOrdered = new ArrayList<>();
-
+        vertexPairMapConflictOrdered = new ArrayList<>();
         // 初始化点对冲突度数组
-        // for (Map.Entry<Map.Entry<Integer, Integer>, Double> entry : vertexPairMapConflict.entrySet()) {
-        // vertexPairMapConflictOrdered.add(entry.getKey());
-        // }
+        for (Map.Entry<Map.Entry<Integer, Integer>, Double> entry : vertexPairMapConflict.entrySet()) {
+        vertexPairMapConflictOrdered.add(entry.getKey());
+        }
+        this.mergeSort();
+        double tmpConflict = -1;
+        // TODO: 记录各各冲突的的点对数量
+        for (int i = 0; i < vertexPairMapConflictOrdered.size(); i++) {
+            double conflict = vertexPairMapConflict.get(vertexPairMapConflictOrdered.get(i));
+            if (conflictMapVertexPairNum.containsKey(conflict)) {
+                int num = conflictMapVertexPairNum.get(conflict);
+                conflictMapVertexPairNum.put(conflict, num + 1);
+            } else {
+                conflictMapVertexPairNum.put(conflict, 0);
+            }
+            if (conflict != tmpConflict) {
+                stepConflictIndex.put(conflict, i);
+                tmpConflict = conflict;
+            }
+        }
 
-        // this.mergeSort();
-
-        // double tmpConflict = -1;
-
-        // for (int i = 0; i < vertexPairMapConflictOrdered.size(); i++) {
-        //     double conflict = vertexPairMapConflict.get(vertexPairMapConflictOrdered.get(i));
-        //     if (conflict != tmpConflict) {
-        //         stepConflictIndex.put(conflict, i);
-        //         tmpConflict = conflict;
-        //     }
-        // }
-        // System.out.println("Break point!");
     }
 
-    // public void mergeSort() {
-    //     Map.Entry<Integer, Integer>[] temp = new Map.Entry[vertexPairMapConflictOrdered.size()];
-    //     int gap = 1;
-    //
-    //     while (gap < vertexPairMapConflictOrdered.size()) {
-    //         for (int i = 0; i < vertexPairMapConflictOrdered.size(); i += gap * 2) {
-    //             int mid = i + gap;
-    //             int right = mid + gap;
-    //
-    //             if (mid > vertexPairMapConflictOrdered.size()) {
-    //                 mid = vertexPairMapConflictOrdered.size();
-    //             }
-    //             if (right > vertexPairMapConflictOrdered.size()) {
-    //                 right = vertexPairMapConflictOrdered.size();
-    //             }
-    //             mergeData(i, mid, right, temp);
-    //         }
-    //         for (int i = 0; i < vertexPairMapConflictOrdered.size(); i++) {
-    //             vertexPairMapConflictOrdered.set(i, temp[i]);
-    //         }
-    //         // gap *= 2;
-    //         gap <<= 1;
-    //     }
-    // }
+    public void mergeSort() {
+        Map.Entry<Integer, Integer>[] temp = new Map.Entry[vertexPairMapConflictOrdered.size()];
+        int gap = 1;
 
-    // // 合并数据  [left,mid)  [mid,right)
-    // private void mergeData(int left, int mid, int right, Map.Entry[] temp) {
-    //     int index = left;
-    //     int begin1 = left, begin2 = mid;
-    //
-    //     while (begin1 < mid && begin2 < right) {
-    //         if (vertexPairMapConflict.get(vertexPairMapConflictOrdered.get(begin1))
-    //                 <= vertexPairMapConflict.get(vertexPairMapConflictOrdered.get(begin2))) {
-    //             temp[index++] = vertexPairMapConflictOrdered.get(begin1++);
-    //         } else {
-    //             temp[index++] = vertexPairMapConflictOrdered.get(begin2++);
-    //         }
-    //     }
-    //     // 如果第一个区间中还有数据
-    //     while (begin1 < mid) {
-    //         temp[index++] = vertexPairMapConflictOrdered.get(begin1++);
-    //     }
-    //     // 如果第二个区间有数据
-    //     while (begin2 < right) {
-    //         temp[index++] = vertexPairMapConflictOrdered.get(begin2++);
-    //     }
-    // }
+        while (gap < vertexPairMapConflictOrdered.size()) {
+            for (int i = 0; i < vertexPairMapConflictOrdered.size(); i += gap * 2) {
+                int mid = i + gap;
+                int right = mid + gap;
+
+                if (mid > vertexPairMapConflictOrdered.size()) {
+                    mid = vertexPairMapConflictOrdered.size();
+                }
+                if (right > vertexPairMapConflictOrdered.size()) {
+                    right = vertexPairMapConflictOrdered.size();
+                }
+                mergeData(i, mid, right, temp);
+            }
+            for (int i = 0; i < vertexPairMapConflictOrdered.size(); i++) {
+                vertexPairMapConflictOrdered.set(i, temp[i]);
+            }
+            // gap *= 2;
+            gap <<= 1;
+        }
+    }
+
+    // 合并数据  [left,mid)  [mid,right)
+    private void mergeData(int left, int mid, int right, Map.Entry[] temp) {
+        int index = left;
+        int begin1 = left, begin2 = mid;
+
+        while (begin1 < mid && begin2 < right) {
+            if (vertexPairMapConflict.get(vertexPairMapConflictOrdered.get(begin1))
+                    <= vertexPairMapConflict.get(vertexPairMapConflictOrdered.get(begin2))) {
+                temp[index++] = vertexPairMapConflictOrdered.get(begin1++);
+            } else {
+                temp[index++] = vertexPairMapConflictOrdered.get(begin2++);
+            }
+        }
+        // 如果第一个区间中还有数据
+        while (begin1 < mid) {
+            temp[index++] = vertexPairMapConflictOrdered.get(begin1++);
+        }
+        // 如果第二个区间有数据
+        while (begin2 < right) {
+            temp[index++] = vertexPairMapConflictOrdered.get(begin2++);
+        }
+    }
 
     /**
      * flag: 0 -> vertex pair, 1 -> path
      **/
-    private void homeGraphBuilder(ArrayList<Integer> path) {
-        Set<Integer> set = homoGraph.get(path.get(0));
+    private void homoGraphBuilder(ArrayList<Integer> path) {
+        Set<Integer> set = this.homoGraph.get(path.get(0));
         if (set != null) {
             set.add(path.get(path.size() - 1));
         } else {
             Set<Integer> newSet = new HashSet<>();
             newSet.add(path.get(path.size() - 1));
-            homoGraph.put(path.get(0), newSet);
+            this.homoGraph.put(path.get(0), newSet);
         }
-        set = homoGraph.get(path.get(path.size() - 1));
+        set = this.homoGraph.get(path.get(path.size() - 1));
         if (set != null) {
             set.add(path.get(0));
         } else {
             Set<Integer> newSet = new HashSet<>();
             newSet.add(path.get(0));
-            homoGraph.put(path.get(path.size() - 1), newSet);
+            this.homoGraph.put(path.get(path.size() - 1), newSet);
         }
-        // 更新边容量
+
+        // 更新点容量（更新边容量）
         for (int i = 0; i < path.size() - 1; i++) {
-            edgeUsedTimes[vertexPairMapEdge.get(Map.entry(path.get(i), path.get(i + 1)))]--;
+            vertexUsedTimes[path.get(i + 1)]--;
         }
         // 如果点对已连接则去除其在HashMap中的键值对
         int k = path.get(0);
         int v = path.get(path.size() - 1);
 
-        // Double tmpConflict1 = vertexPairMapConflict.get(Map.entry(k, v));
-        // Double tmpConflict2 = vertexPairMapConflict.get(Map.entry(v, k));
         vertexPairMapConflict.remove(Map.entry(k, v));
         vertexPairMapPath.remove(Map.entry(k, v));
         vertexPairMapAllPath.remove(Map.entry(k, v));
         vertexPairMapConflict.remove(Map.entry(v, k));
         vertexPairMapPath.remove(Map.entry(v, k));
         vertexPairMapAllPath.remove(Map.entry(v, k));
-        // vertexPairMapConflictOrdered.remove(Map.entry(k, v));
-        // vertexPairMapConflictOrdered.remove(Map.entry(v, k));
+
+        // 路径可以被使用后删掉
+        pathMapConflict.remove(path);
 
     }
 
-    /**
-     * flag: 0 -> vertex pair, 1 -> path
-     **/
     private void updateVertexPairMap(ArrayList<Integer> path) {
+        HashSet<Map.Entry<Integer, Integer>> affVertexPairs = new HashSet<>();
+        HashSet<ArrayList<Integer>> pathProcessed = new HashSet<>();
+        // 更新路径冲突
         for (int i = 0; i < path.size() - 1; i++) {
-            int k = path.get(i);
             int v = path.get(i + 1);
-            int edgeId = vertexPairMapEdge.get(Map.entry(k, v));
-            ArrayList<ArrayList<Integer>> tmpVar = edgeMapPath.get(edgeId);
+            ArrayList<ArrayList<Integer>> tmpVar = vertexMapPath.get(v);
             for (int j = 0; j < tmpVar.size(); j++) {
-                // TODO: 如果此条路径所连接的点对已经无了则无需更新路径，并且可以删掉路径
+                // 去除受影响的第j条路径
                 ArrayList<Integer> integers = tmpVar.get(j);
-                // 更新边冲突
+                if (pathProcessed.contains(integers))
+                    continue;
                 double conflict = calcPathConflict(integers);
                 int vertexPairStart = integers.get(0);
                 int vertexPairEnd = integers.get(integers.size() - 1);
                 Map.Entry<Integer, Integer> vertexPair = Map.entry(vertexPairStart, vertexPairEnd);
-                // Map.Entry<Integer, Integer> vertexPairReverse = Map.entry(vertexPairEnd, vertexPairStart);
-                // 如果点对在同构图中已连接则跳过
-                if (!vertexPairMapConflict.containsKey(vertexPair))
-                    continue;
+                Map.Entry<Integer, Integer> vertexPairReverse = Map.entry(vertexPairEnd, vertexPairStart);
+                affVertexPairs.add(vertexPair);
+                affVertexPairs.add(vertexPairReverse);
+                pathProcessed.add(integers);
                 if (pathMapConflict.containsKey(integers)) {
                     pathMapConflict.put(integers, conflict);
                 }
-                // 更新点对冲突
-                // double oldConflict = vertexPairMapConflict.get(vertexPair);
-                double newConflict = conflict;
-                if (newConflict == -1) {
-                    ArrayList<ArrayList<Integer>> tmp = vertexPairMapAllPath.get(vertexPair);
-                    tmp.remove(integers);
+                if (conflict == -1) {
+                    // 如果路径已经不可用则直接去除
+                    pathMapConflict.remove(integers);
                     tmpVar.remove(integers);
                     // 防止索引越界
                     j--;
-                    // 如果此点对之间已无路径了则删除点对的键值，直接进行下一轮循环
-                    if (tmp.size() == 0) {
+                }
+                // 如果点对在同构图中已连接则跳过
+                if (!vertexPairMapConflict.containsKey(vertexPair)) {
+                    pathMapConflict.remove(integers);
+                    continue;
+                }
+                if (conflict == -1) {
+                    vertexPairMapAllPath.get(vertexPair).remove(integers);
+                    // 如果此点对之间已无路径了则删除点对的键值
+                    if (vertexPairMapAllPath.get(vertexPair).size() == 0) {
                         vertexPairMapConflict.remove(vertexPair);
                         vertexPairMapPath.remove(vertexPair);
                         vertexPairMapAllPath.remove(vertexPair);
-                        // vertexPairMapConflictOrdered.remove(vertexPair);
-                        // vertexPairMapConflict.remove(vertexPairReverse);
-                        // vertexPairMapPath.remove(vertexPairReverse);
-                        // vertexPairMapAllPath.remove(vertexPairReverse);
-                        continue;
-                    }
-                    // 如果恰巧这条路径就是当前vertexMapPath中的路径
-                    if (integers == vertexPairMapPath.get(vertexPair)) {
-                        Double tmpConflict = Double.POSITIVE_INFINITY;
-                        // 另外找出一条冲突最小的路径
-                        for (ArrayList<Integer> minPath : tmp) {
-                            Double anotherConflict = pathMapConflict.get(minPath);
-                            if (anotherConflict < tmpConflict) {
-                                vertexPairMapConflict.put(vertexPair, anotherConflict);
-                                vertexPairMapPath.put(vertexPair, minPath);
-                            }
-                        }
+                        vertexPairMapConflict.remove(vertexPairReverse);
+                        vertexPairMapPath.remove(vertexPairReverse);
+                        vertexPairMapAllPath.remove(vertexPairReverse);
                     }
                 }
-                // A->P->A路径不会出现这种情况，因为是冲突度是阶梯性的
-                // else if (newConflict < oldConflict) {
-                //     System.out.println("replaced");
-                //     vertexPairMapConflict.put(vertexPair, newConflict);
-                //     vertexPairMapPath.put(vertexPair, integers);
-                // }
+            }
+        }
+
+        HashSet<Map.Entry<Integer, Integer>> processedVertexPair = new HashSet<>();
+        Iterator<Map.Entry<Integer, Integer>> it = affVertexPairs.stream().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Integer> vertexPair = it.next();
+            // 如果这个点对已经被处理过则跳过
+            if (processedVertexPair.contains(vertexPair))
+                continue;
+            processedVertexPair.add(vertexPair);
+            // 如果点对已经在同构图中了则跳过
+            if (!vertexPairMapConflict.containsKey(vertexPair))
+                continue;
+            ArrayList<ArrayList<Integer>> tmp = vertexPairMapAllPath.get(vertexPair);
+            double tmpConflict = Double.POSITIVE_INFINITY;
+            // 找出一条冲突最小的路径
+            for (ArrayList<Integer> minPath : tmp) {
+                Double anotherConflict = pathMapConflict.get(minPath);
+                if (anotherConflict < tmpConflict) {
+                    vertexPairMapConflict.put(vertexPair, anotherConflict);
+                    vertexPairMapPath.put(vertexPair, minPath);
+                }
+            }
+        }
+    }
+
+    // 在删除一个点对之后更新索引
+    private void updateStepIndexAfterDelete(Map.Entry<Integer, Integer> vertexPair) {
+        // 相应冲突度对应的点对数减一
+        double tmpConflict = vertexPairMapConflict.get(vertexPair);
+        int num = conflictMapVertexPairNum.get(tmpConflict);
+        conflictMapVertexPairNum.put(tmpConflict, num - 1);
+
+        double conflict = vertexPairMapConflict.get(vertexPair);
+        for (Map.Entry<Double, Integer> entry : stepConflictIndex.entrySet()) {
+            // 如果存在此种冲突度，则索引位置减一
+            if (entry.getValue() != -1) {
+                if (entry.getKey() > conflict) {
+                    stepConflictIndex.put(entry.getKey(), entry.getValue() - 1);
+                }
+            }
+        }
+        vertexPairMapConflictOrdered.remove(vertexPair);
+
+        // 如果此种冲突度的点对一个都没有了则设置为-1
+        if (conflictMapVertexPairNum.get(conflict) == 0) {
+            stepConflictIndex.put(conflict, -1);
+        }
+    }
+
+    // 在更新一个点对冲突度之后更新索引
+    private void updateStepIndexAfterUpdate(Map.Entry<Integer, Integer> vertexPair, double oldConflict){
+        double tmpConflict;
+        int num;
+        // 相应冲突度对应的点对数减一
+        num = conflictMapVertexPairNum.get(oldConflict);
+        conflictMapVertexPairNum.put(oldConflict, num - 1);
+
+        // 如果此种冲突度的点对一个都没有了则设置为-1
+        if (conflictMapVertexPairNum.get(oldConflict) == 0) {
+            stepConflictIndex.put(oldConflict, -1);
+        }
+
+        // 新的冲突度对应的点对数加一
+        tmpConflict = vertexPairMapConflict.get(vertexPair);
+        num = conflictMapVertexPairNum.get(tmpConflict);
+        conflictMapVertexPairNum.put(tmpConflict, num + 1);
+
+        // 新的冲突度一定是小于等于原来得冲突度的
+        double newConflict = vertexPairMapConflict.get(vertexPair);
+        for (Map.Entry<Double, Integer> entry : stepConflictIndex.entrySet()) {
+            // 如果索引中不存在此冲突度则跳过
+            if (entry.getValue() == -1)
+                continue;
+            // 值更新受影响的冲突度索引
+            if (oldConflict <= entry.getKey() && entry.getKey() <= newConflict) {
+
             }
         }
     }
@@ -518,9 +600,9 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
         double totalTimes = Config.SHARED_TIMES;
         double usedTimesInTotal = 0;
         for (int i = 0; i < path.size() - 1; i++) {
-            usedTimesInTotal += totalTimes - edgeUsedTimes[vertexPairMapEdge.get(Map.entry(path.get(i), path.get(i + 1)))];
-            // 如果有边的容量小于等于0
-            if (edgeUsedTimes[vertexPairMapEdge.get(Map.entry(path.get(i), path.get(i + 1)))] <= 0) {
+            usedTimesInTotal += totalTimes - vertexUsedTimes[path.get(i + 1)];
+            // 如果有点的容量小于等于0
+            if (vertexUsedTimes[path.get(i + 1)] <= 0) {
                 // -1代表此条路径已经不可用
                 return -1;
             }
@@ -547,7 +629,7 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                     int nbVertexId = nbArr[i], nbEdgeId = nbArr[i + 1];
                     if (targetVType == vertexType[nbVertexId]
                             && targetEType == edgeType[nbEdgeId]
-                            && edgeUsedTimes[nbEdgeId] > 0
+                            && vertexUsedTimes[nbVertexId] > 0
                     ) {
                         // 记录起始点位置
                         if (index == 0) {
@@ -559,10 +641,6 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                                 // 目的是为了找到没有找到过的点，因此如果发现此点已经被找到则跳过
                                 if (vertexFound.contains(nbVertexId))
                                     continue;
-                                // TODO: 通过度数限制进行剪枝
-                                // 同时如果新的点的度数不足k - 1则直接去掉
-
-
                             } else {
                                 // 只寻找在已知图中的边且必须是新找到的点集合中的
                                 if (!foundVertex.contains(nbVertexId) || nbVertexId == startPoint) {
@@ -591,11 +669,9 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
     }
 
     private void createPathSet(Set<Integer> vertexSet, HashMap<Integer, ArrayList<Integer>> pathRecordMap) {
-        // TODO: 减少生成路径集合的大小?
         // 重新初始化所有路径集合
         allPaths = new ArrayList<>();
-        // 重新初始化边对应的受影响路径
-        edgeMapPath = new HashMap<>();
+        vertexMapPath = new HashMap<>();
         for (int vertexStart : vertexSet) {
             // 记录已经到达的点
             Set<Integer> reached = new HashSet<>();
@@ -614,17 +690,16 @@ public class QueryNodeExpandStrategyOptimized implements InitialGraphConstructor
                         allPaths.add(tempPath);
                         // 遍历路径的所有边，在HashMap中以边为键映射到边
                         for (int i = 0; i < tempPath.size() - 1; i++) {
-                            int k = tempPath.get(i);
                             int v = tempPath.get(i + 1);
-                            int edgeId = vertexPairMapEdge.get(Map.entry(k, v));
-                            if (edgeMapPath.containsKey(edgeId)) {
-                                ArrayList<ArrayList<Integer>> tmpPathList = edgeMapPath.get(edgeId);
+                            if (vertexMapPath.containsKey(v)) {
+                                ArrayList<ArrayList<Integer>> tmpPathList = vertexMapPath.get(v);
                                 tmpPathList.add(tempPath);
                             } else {
                                 ArrayList<ArrayList<Integer>> tempPathList = new ArrayList<>();
                                 tempPathList.add(tempPath);
-                                edgeMapPath.put(edgeId, tempPathList);
+                                vertexMapPath.put(v, tempPathList);
                             }
+
                         }
                     }
                 } else {

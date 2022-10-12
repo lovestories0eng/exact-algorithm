@@ -1,4 +1,4 @@
-package utils.impl;
+package vertexDisjoint;
 
 import common.BatchLinker;
 import global.Config;

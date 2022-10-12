@@ -2,25 +2,12 @@ package global;
 
 import methods.DataReader;
 import models.MetaPath;
-import utils.impl.QueryNodeExpandStrategyDivided;
-import utils.impl.QueryNodeExpandStrategyOptimized;
+import vertexDisjoint.QueryNodeExpandStrategyOptimized;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * SHARED_TIMES: 1 -> 22.73s
- * SHARED_TIMES: 2 -> 159.63s
- * SHARED_TIMES: 3 -> 201.08s
- * SHARED_TIMES: 4 -> 545.12s
- * SHARED_TIMES: 5 -> 796.33s
- * SHARED_TIMES: 6 -> 800.55s
- * SHARED_TIMES: 7 -> 609.94s
- * SHARED_TIMES: 8 -> 590.18s
- * SHARED_TIMES: 9 -> 611.09s
- * SHARED_TIMES: 10 -> 574.69s
- * **/
 public class Test {
     public static void main(String[] args) {
         DataReader dataReader = new DataReader(Config.dblpGraph, Config.dblpVertex, Config.dblpEdge);
@@ -41,11 +28,13 @@ public class Test {
         // queryNodeExpandStrategy.query(Config.queryNodeId, metaPath, 0);
 
         int[] points = {101350};
+        // int[] points = {0};
+        // int[] points = {2714};
 
         // int[] hops = {1, 2, 3, 4, 5, 6};
-        int[] hops = {10};
+        int[] hops = {100};
 
-        int[] sharedTimes = {1};
+        int[] sharedTimes = {2};
 
         for (int point : points) {
             System.out.println("点：" + point);
