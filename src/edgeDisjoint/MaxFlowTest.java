@@ -11,7 +11,7 @@ import java.util.*;
 public class MaxFlowTest {
 
     public static void main(String[] args) {
-        DataReader dataReader = new DataReader(Config.dblpGraph, Config.dblpVertex, Config.dblpEdge);
+        DataReader dataReader = new DataReader(Config.dblpGraph, Config.dblpVertex, Config.dblpEdge, Config.dblpAttribute);
         int[][] graph = dataReader.readGraph();
         int[] vertexType = dataReader.readVertexType();
         int[] edgeType = dataReader.readEdgeType();

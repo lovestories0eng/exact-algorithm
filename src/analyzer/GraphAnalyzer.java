@@ -9,7 +9,7 @@ public class GraphAnalyzer {
      * check whether there is always a bidirectional edge between link nodes
      **/
     public static void main(String[] args) {
-        DataReader dataReader = new DataReader(Config.dblpGraph, Config.dblpVertex, Config.dblpEdge);
+        DataReader dataReader = new DataReader(Config.dblpGraph, Config.dblpVertex, Config.dblpEdge, Config.dblpAttribute);
         int[][] graph = dataReader.readGraph();
         int[] vertexType = dataReader.readVertexType();
         int[] edgeType = dataReader.readEdgeType();

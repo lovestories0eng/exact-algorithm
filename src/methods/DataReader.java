@@ -11,15 +11,17 @@ public class DataReader {
     private String graphFile = null;
     private String vertexFile = null;
     private String edgeFile = null;
+    private String attributeFile = null;
     private int vertexNum = 0;
     private int edgeNum = 0;
 
-    public DataReader(String graphFile, String vertexFile, String edgeFile){
+    public DataReader(String graphFile, String vertexFile, String edgeFile, String attributeFile){
         this.graphFile = graphFile;
         this.vertexFile = vertexFile;
         this.edgeFile = edgeFile;
+        this.attributeFile = attributeFile;
 
-        //compute the number of nodes
+        // compute the number of nodes
         try{
             File test= new File(graphFile);
             long fileLength = test.length();
@@ -38,29 +40,53 @@ public class DataReader {
         int[][] graph = new int[vertexNum][];
         try{
             BufferedReader stdin = new BufferedReader(new FileReader(graphFile));
-
             String line = null;
             while((line = stdin.readLine()) != null){
                 String[] s = line.split(" ");
                 // read vertex id
                 int vertexId = Integer.parseInt(s[0]);
-
                 // read the adjacent list
                 int[] nb = new int[s.length - 1];
                 for(int i = 1;i < s.length;i ++)
                     nb[i - 1] = Integer.parseInt(s[i]);
                 graph[vertexId] = nb;
-
                 edgeNum += nb.length / 2;
             }
             stdin.close();
         }catch(Exception e){
             e.printStackTrace();
         }
-
         System.out.println(graphFile + " |V|=" + vertexNum + " |E|=" + edgeNum / 2);//each edge is bidirectional
-
         return graph;
+    }
+
+    public static String removeCharAt(String s, int pos) {
+        return s.substring(0, pos) + s.substring(pos + 1);
+    }
+
+    public double[][] readVertexAttribute() {
+        double[][] attribute = new double[vertexNum][];
+        try {
+            BufferedReader stdin = new BufferedReader(new FileReader(attributeFile));
+            // 读取第一行无用数据
+            String line = stdin.readLine();
+            while ((line = stdin.readLine()) != null) {
+                String tmp = line;
+                String[] s = line.split(" ");
+                tmp = removeCharAt(tmp, s[0].length() + 1);
+                tmp = tmp.substring(0, tmp.length() - 1);
+                s = tmp.split(" ");
+
+                int vertexId = Integer.parseInt(s[0]);
+                double[] nb = new double[s.length - 1];
+                for (int i = 1; i < s.length; i++)
+                    nb[i - 1] = Double.parseDouble(s[i]);
+                attribute[vertexId] = nb;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return attribute;
     }
 
     //return the type of each vertex
@@ -104,7 +130,6 @@ public class DataReader {
         return edgeType;
     }
 
-    //return the graph edge information
     public HashMap<Map.Entry<Integer, Integer>, Integer> readVertexPairMapEdge(){
         HashMap<Map.Entry<Integer, Integer>, Integer> vertexPairMapEdge = new HashMap<>();
         // Variable-length array for each vertex

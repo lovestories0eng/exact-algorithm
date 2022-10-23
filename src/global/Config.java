@@ -17,6 +17,7 @@ public class Config {
     public static String dblpGraph = dblpRoot + "graph.txt";
     public static String dblpVertex = dblpRoot + "vertex.txt";
     public static String dblpEdge = dblpRoot + "edge.txt";
+    public static String dblpAttribute = dblpRoot + "DBLPdata.txt";
     // 查询节点ID
     public static int queryNodeId = 0;
     // public static int queryNodeId = 552985;
@@ -29,7 +30,7 @@ public class Config {
     // public static int k = 3;
     // SHARED_TIME = 1
     // public static int k = 61;
-    public static int k = 5;
+    public static int k = 3;
 
     // 点的共享次数
     public static int SHARED_TIMES = 1;
